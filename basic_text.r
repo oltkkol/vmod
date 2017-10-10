@@ -2,11 +2,13 @@
 ##	DEPENDENCIES + INSTALL
 ## ------------------------------------------------------------------------------------------------
 
-install.packages("stringdist")
-install.packages("stringi")
-install.packages("proxy")
-source("https://bioconductor.org/biocLite.R")
-biocLite("Biostrings")
+if (! "Biostrings" %in% installed.packages() ){
+	install.packages("stringdist")
+	install.packages("stringi")
+	install.packages("proxy")
+	source("https://bioconductor.org/biocLite.R")
+	biocLite("Biostrings")
+}
 
 ## ------------------------------------------------------------------------------------------------
 ## 	START HERE
