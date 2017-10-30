@@ -1,6 +1,9 @@
+
+## packages install (if needed)	###################################################################
 install.packages("caTools")
 install.packages("e1071")
 
+## START HERE	###################################################################################
 library('caTools')
 library(MASS)
 library(datasets)
@@ -9,7 +12,6 @@ library(mlbench)
 
 ## Splits dataset into training and testing by ratio with class ratio preserved in both sets
 ## Eg: SplitDataSetTrainTest(iris, "Species", 2/3)
-
 SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio){
 	mask <- sample.split( dataset[,targetColumnName], SplitRatio=ratio, group=dataset[,targetColumnName] )
 
@@ -19,6 +21,7 @@ SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio){
 	return ( list(trainingData = trainingDataSet, testingData = testingDataSet) ) 
 }
 
+## Removes given column from dataset
 RemoveGivenColumns <- function(dataset, columnNames){
 	return( dataset[ , -which(names(dataset) %in% columnNames)] )
 }
@@ -34,6 +37,7 @@ RemoveAllNanRows <- function(dataset){
 	return( dataset[complete.cases(dataset), ] )
 }
 
+## Gets named list of X (features) and Y (targets) from given dataset
 ## Eg: GetXAndY(iris, "Species")
 GetXAndY <- function(dataset, targetColumnName){
 	
@@ -43,6 +47,7 @@ GetXAndY <- function(dataset, targetColumnName){
 	return (list(X = X, Y = Y ) )
 }
 
+## Calculates confusion table for given model and given data
 GetConfusionMatrix <- function(model, testData){
 	yHat <- predict(model, testData$X)
 
@@ -77,8 +82,14 @@ CalculateStatisticsForConfusionMatrix <- function(cm){
 
 ###################################################################################################
 
-dataset				<- iris				## <== YOUR DATASET
-targetColumnName	<- "Species"		## <== YOUR TARGET COLUMN
+#dataset				<- iris
+#targetColumnName	<- "Species"
+
+data(Sonar)
+dataset				<- Sonar
+targetColumnName	<- "Class"
+
+## Settings
 trainToTestRatio	<- 2/3
 
 ## Hard Work	
@@ -101,6 +112,9 @@ model		<- qda(train$X, train$Y)
 model		<- naiveBayes(train$X, train$Y)
 
 # Performance:
+GetConfusionMatrix(model, train)
+GetConfusionMatrix(model, test)
+
 cm <- GetConfusionMatrix(model, train)
 cm <- GetConfusionMatrix(model, test)
 
