@@ -5,6 +5,7 @@ library('caTools')
 library(MASS)
 library(datasets)
 library('e1071')
+library(mlbench)
 
 ## Splits dataset into training and testing by ratio with class ratio preserved in both sets
 ## Eg: SplitDataSetTrainTest(iris, "Species", 2/3)
