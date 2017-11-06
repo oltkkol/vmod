@@ -162,9 +162,11 @@ data(Sonar)
 dataset		<- Sonar
 datasets	<- PrepareTrainAndTest(dataset, "Class", 2/3)
 
-model		<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+modelBayes	<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+modelSVM	<- svm(datasets$Train$X, datasets$Train$Y)
 
-EvaluateModelAndPlot(model, datasets$Train, datasets$Test)
+EvaluateModelAndPlot(modelBayes,	datasets$Train, datasets$Test)
+EvaluateModelAndPlot(modelSVM,		datasets$Train, datasets$Test)
 
 ##	2. MORE ADVANCED	###########################################################################
 
