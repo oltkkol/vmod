@@ -176,7 +176,9 @@ titanic				<- read.csv("G:/VMOD/titanic.txt")
 # - clear dataset -
 dataset				<- KeepOnlyGivenColumns( titanic, c("pclass", "survived", "sex", "age") )
 dataset				<- RemoveAllNanRows(dataset)
+
 dataset$sex			<- as.numeric(dataset$sex)
+dataset$survived	<- as.factor(dataset$survived)
 
 # - prepare dataset -
 datasets	<- PrepareTrainAndTest(dataset, "survived", trainToTestRatio=2/3)
