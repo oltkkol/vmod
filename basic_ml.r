@@ -4,7 +4,7 @@ rlibrary <- function(libraryName){
 
 	if (prequire() == F){
 		install.packages(libraryName)
-		return ( require() )
+		library(libraryName)
 	}
 }
 
