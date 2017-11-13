@@ -55,6 +55,16 @@ RemoveAllNanRows <- function(dataset){
 	return ( na.omit(dataset) )
 }
 
+## Removes all columns with zeros
+RemoveAllZeroColumns <- function(dataset){
+	return (dataset[, colSums(dataset != 0) > 0])
+}
+
+## Clears dataset: Removes all rows with NaN and all columns with 0s only
+ClearDataset <- function(dataset){
+	return (RemoveAllZeroColumns(RemoveAllNanRows(dataset)))
+}
+
 ## Gets named list of X (features) and Y (targets) from given dataset
 ## Eg: GetXAndY(iris, "Species")
 GetXAndY <- function(dataset, targetColumnName){
