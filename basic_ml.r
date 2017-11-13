@@ -22,21 +22,6 @@ ShuffleRows	<- function(dataset){
 	return ( dataset[sample(nrow(dataset)),] )
 }
 
-## Splits dataset into training and testing by ratio with class ratio preserved in both sets
-## Eg:	SplitDataSetTrainTest(iris, "Species", 2/3)
-SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio, shuffle=T){
-	if (shuffle == T){
-		dataset = ShuffleRows(dataset)
-	}
-
-	mask <- sample.split( dataset[,targetColumnName], SplitRatio=ratio, group=dataset[,targetColumnName] )
-
-	trainingDataSet	<- dataset[which(mask == TRUE),]
-	testingDataSet	<- dataset[which(mask == FALSE),]
-
-	return ( list(trainingData = trainingDataSet, testingData = testingDataSet) ) 
-}
-
 ## Removes given column from dataset
 ## Eg:	RemoveGivenColumns(iris, c("Species"))
 RemoveGivenColumns <- function(dataset, columnNames){
@@ -72,6 +57,21 @@ GetXAndY <- function(dataset, targetColumnName){
 	Y = KeepOnlyGivenColumns(dataset, c(targetColumnName))
 
 	return (list(X = X, Y = Y ) )
+}
+
+## Splits dataset into training and testing by ratio with class ratio preserved in both sets
+## Eg:	SplitDataSetTrainTest(iris, "Species", 2/3)
+SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio, shuffle=T){
+	if (shuffle == T){
+		dataset = ShuffleRows(dataset)
+	}
+
+	mask <- sample.split( dataset[,targetColumnName], SplitRatio=ratio, group=dataset[,targetColumnName] )
+
+	trainingDataSet	<- dataset[which(mask == TRUE),]
+	testingDataSet	<- dataset[which(mask == FALSE),]
+
+	return ( list(trainingData = trainingDataSet, testingData = testingDataSet) ) 
 }
 
 ## Splits dataset into train and test datasets (with trainToTestRatio) preserving class balance (targetColumnName)
