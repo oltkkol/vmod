@@ -1,6 +1,4 @@
-## ------------------------------------------------------------------------------------------------
-##	DEPENDENCIES + INSTALL
-## ------------------------------------------------------------------------------------------------
+## INSTALL ########################################################################################
 
 if (! "Biostrings" %in% installed.packages() ){
 	install.packages("stringdist")
@@ -10,9 +8,7 @@ if (! "Biostrings" %in% installed.packages() ){
 	biocLite("Biostrings")
 }
 
-## ------------------------------------------------------------------------------------------------
-## 	START HERE
-## ------------------------------------------------------------------------------------------------
+## DEPENDENCY	###################################################################################
 
 library(stringi)
 library(proxy)
@@ -22,7 +18,7 @@ library(Biostrings)
 Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
 Sys.getlocale(category="LC_ALL")
 
-## BASIC FUNCTIONS FOR TEXT OPERATIONS
+## FILE WORK	###################################################################################
 
 # reads content of file as plain text
 GetFileContent <- function(fileName){
@@ -32,24 +28,30 @@ GetFileContent <- function(fileName){
 }
 
 # reads all files and their contents from given folder and saves them into named list
+# Eg.: GetFilesContentsFromFolder("/Documents/Texts/")
 GetFilesContentsFromFolder <- function(folderPath){
 	getFileContentFromFolderFile <- function(fileName)	{
 		fileName <- paste(folderPath, fileName, sep="/")
 		return( GetFileContent(fileName) )
 	}
 
-	return( sapply(list.files(folderPath), getFileContentFromFolderFile) )
+	output <- list()
+	for(file in list.files(folderPath)){
+		output[file] <- getFileContentFromFolderFile(file)
+	}
+
+	return (output);
 }
 
 # merges vector of strings to one string
-MergeTexts <- function(seznamTextu){
-	return( do.call(paste, c(as.list(seznamTextu), sep=" ")) )
+# Eg.: MergeTexts( c("hello", "there")  )
+MergeTexts <- function(texts){
+	return( do.call(paste, c(as.list(texts), sep=" ")) )
 }
 
+## TEXT WORK	###################################################################################
 
-## TOKENIZACE, TYPY, ATD.	#######################################################################
-
-# basic plain text tokenizer by regular expression split mask
+# Basic plain text tokenizer by regular expression split mask
 # Eg.:	TokenizeText("Hey, this is an example")  returns "hey", "this", "is", "an", "example"
 #		TokenizeText("Hey, this is an example", regexPattern="\\b\\w{3}\\b", regexIsMask=TRUE) returns "hey"
 TokenizeText <- function(text, regexPattern="\\W+", regexIsMask=FALSE, convertToLowerCase=TRUE){
@@ -69,45 +71,81 @@ TokenizeText <- function(text, regexPattern="\\W+", regexIsMask=FALSE, convertTo
 	return(tokens)
 }
 
-# tokenizes vector of texts
+# tokenizes list of texts
+# Eg.: TokenizeTexts( c("Hey, this is an example.", "Yes. Good.") )
 TokenizeTexts <- function(texts){
-	return( sapply( texts, TokenizeText) )
+	return( lapply(texts, TokenizeText) )
 }
  
-# gets types (dictionary) from token list
+# Gets types (dictionary) from token list
 GetTypes <- function(tokensList){
- return( unique(tokensList) )
+	return( unique(tokensList) )
+}
+
+# Gets only given number of tokens; if takeRandom=T, random count of tokens will be returned
+# Eg.: LimitTokens( c("well", "that's", "great", "i", "can", "take", "any"), count=3, takeRandom=T )
+LimitTokens <- function(tokensList, count, takeRandom=F){
+	output <- tokensList
+	if (takeRandom == T){
+		output <- sample(output)
+	}
+
+	return (output[1:min(count, length(output))])
+}
+
+LimitTokensInTexts <- function(texts, count, ...){
+	return ( lapply(texts, function(t) LimitTokens(t, count, ...)) )
 }
 
 ## BOW MODEL	###################################################################################
 
-# Creates BOW model for named list of texts (eg. readed by GetFilesContentsFromFolder)
-MakeBOWModel <- function(texts){
-	tokenizedTexts	<- TokenizeTexts(texts)
+# Creates BOW model for list of tokenized texts
+# Eg.: MakeBOWModel( list(text1 = c("John", "ate", "an", "apple"), text2 = c("Kate", "ate", "an", "orange") ) )
+MakeBOWModel <- function(tokenizedTexts){
 	allTokens		<- unlist( tokenizedTexts )
 	globalDict		<- GetTypes( allTokens )
-	globalDict		<- sort( globalDict )
 
-	dataMatrix		<- matrix(ncol = length(globalDict), nrow = length(texts))
-	colnames(dataMatrix) <- globalDict
-	rownames(dataMatrix) <- names(texts)
+	dataMatrix				<- matrix(0, ncol = length(globalDict), nrow = length(names(tokenizedTexts)))
+	colnames(dataMatrix)	<- globalDict
+	rownames(dataMatrix)	<- names(tokenizedTexts)
 
-	for(textName in names(texts)){
-		textTokens <- unlist( tokenizedTexts[textName] )
+	frequencyTables	<- lapply(tokenizedTexts, table)
 
-		for(testedType in globalDict){
-			usedTimes <- length( which( textTokens == testedType ) )
-			dataMatrix[textName, testedType] <- usedTimes
-		}
+	for(textName in names(tokenizedTexts)){
+		f		<- frequencyTables[[textName]]
+		types	<- names(f)
+
+		dataMatrix[textName, types] <- f[types]
 	}
 
 	return (dataMatrix)
 }
 
-## POROVNAVANI TEXTU ##############################################################################
+# Converts BOW model to TF-IDF 
+# Eg.:	bowModel = MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
+#		normalizedBowModel = ConvertBOWToTFIDF(bowModel, removeZeroCols=F)
+ConvertBOWToTFIDF <- function(bowMatrix, removeZeroCols=T){
+	tf		<- bowMatrix
+	N		<- nrow(bowMatrix)
+	Nt		<- apply( bowMatrix, 2, function(colData) sum(colData > 0) )
+	weights	<- log(N / Nt)	
+	
+	result	<- cbind(bowMatrix)
+	terms	<- names(weights)
 
-# searches for the most similar word in string by sliding window and calculating DamerauLevensthein distance, returns pair of bestDistance and bestMatch
-# eg: DamerauLevenstheinSliding(where = "the tree has dreamed", what = "hat") returns ("1", "has") as the most similar
+	result[,terms] <- t( t(tf[,terms]) * weights[terms] )
+
+	if (removeZeroCols){
+		result <- result[, colSums(result != 0) > 0]
+	}
+
+	return(result)
+}
+
+## STRING COMPARISON	###########################################################################
+
+# Searches for the most similar word in a given string by sliding window and calculating DamerauLevensthein distance, returns pair of bestDistance and bestMatch
+# Eg.: DamerauLevenstheinSliding(where = "the tree has dreamed", what = "hat") returns ("1", "has") as the most similar
 DamerauLevenstheinSliding <- function(where, what){	
 	bestDistance	<- Inf
 	bestMatch		<- ""
@@ -125,7 +163,9 @@ DamerauLevenstheinSliding <- function(where, what){
 	return ( c(bestDistance, bestMatch) )
 }
 
-DamerauLevenstheinSlidingForFolderAndTarget <- function(folderPath, targetPattern){	## hleda nejpodobnejsi slovo v plain textech nactenych z adresare, vraci tabulku nejlepsi shody pro kazdy soubor
+# Searches the most similar word in all files inside given folder. Returns table of the best matches for each file.
+# Eg.: DamerauLevenstheinSlidingForFolderAndTarget("/Documents/Files/DNA", "AAAACCCCTTTTGGGG")
+DamerauLevenstheinSlidingForFolderAndTarget <- function(folderPath, targetPattern){
 	filesFromFolder	<- GetFilesContentsFromFolder(folderPath)
 	results			<-  matrix(0, ncol = 3, nrow = length(filesFromFolder))
 
@@ -147,6 +187,7 @@ DamerauLevenstheinSlidingForFolderAndTarget <- function(folderPath, targetPatter
 SETTINGS_NEEDLEMANWUNSCH_SUBSTMATRIX <- NULL
 SETTINGS_NEEDLEMANWUNSCH_GAP_PENALTY <- -100
 
+# Performs Needleman Wunsch scoring for each file inside given folder to the given pattern. Returns score for each file and its length.
 NeedlemanWunschOneToAll <- function(folderPath, targetPattern){
 	filesFromFolder <- GetFilesContentsFromFolder(folderPath)
 	results			<- matrix(,ncol=3, nrow=length(filesFromFolder))
@@ -181,78 +222,58 @@ MakeNucleotideSubstMatrix <- function(match = 1, mismatch = -1){
 	return(sigma)
 }
 
+## EXAMPLES	#######################################################################################
 
-###################################################################################################
-## 	PRIKLADY POUZITI
-###################################################################################################
-
-#--------------------------------------------------------------------------------------------------
-# Základní práce s textem
-#--------------------------------------------------------------------------------------------------
-
-# Naprikald: nacteni tri souboru s EN texty do promennych X, Y, Z a nasledne jejich propojeni do jednoho velkeho souboru
+# 1. Read 3 texts and work with them
 X <- GetFileContent("C:/TextSamples/EN2.txt")
 Y <- GetFileContent("C:/TextSamples/EN3.txt")
 Z <- GetFileContent("C:/TextSamples/EN4.txt")
 
-vyslednyVelkyText <- MergeTexts( c(X, Y, Z) )
+corpora <- MergeTexts( c(X, Y, Z) )
 
-# Ziskani tokenu a typu z textu a par informaci o nich:
-tokeny	<- TokenizeText( vyslednyVelkyText )
-typy	<- GetTypes(tokeny)
+tokens	<- TokenizeText( corpora )
+types	<- GetTypes(tokens)
 
-pocetTokenu						<- length(tokeny)
-pocetTypu						<- length(typy)
-prumernaDelkaTokenuVGrafemech	<- mean( nchar(tokeny) )
+numberOfTokens				<- length(tokens)
+numberOfTypes				<- length(types)
+meanNumberOfCharsPerToken	<- mean( nchar(tokens) )
 
-hist( nchar(tokeny) )
+hist( nchar(types) )
 
-#--------------------------------------------------------------------------------------------------
-# Vytvoreni BoW modelu
-#--------------------------------------------------------------------------------------------------
+# 2. Making and using BOW model:
 
-souboryZAdresare	<- GetFilesContentsFromFolder("C:/Test")		## nacte soubory z adresare
-data				<- MakeBOWModel(souboryZAdresare)				## vytvori BoW model (matici, radky = jednotlive texty, sloupce = slova, bunky = frekvence zadaneho slova v danem textu)
-head(data)												
+files			<- GetFilesContentsFromFolder("C:/Test")	
+tokenizedFiles	<- TokenizeTexts(files)
+tokenizedFiles	<- LimitTokensInTexts(tokenizedFiles, count=100, takeRandom=T)
+bow				<- MakeBOWModel(tokenizedFiles)			
+tfidfBow		<- ConvertBOWToTFIDF(bow)
 
-vysledneSVD			<- svd(data)									## aplikace napr. svd na matici dat
+resultSVD		<- svd(tfidfBow)
 
-
-#--------------------------------------------------------------------------------------------------
-# Hledani v textech
-#--------------------------------------------------------------------------------------------------
-
+# 3. Text searching
 DamerauLevenstheinSliding("ABCDEFGH", "FGHJ")
 
-DamerauLevenstheinSlidingForFolderAndTarget("C:/Test", "oberljonjt")
+DamerauLevenstheinSlidingForFolderAndTarget("/Documents/Texts/Hasek/Svejk", "oberljonjt")
 
-GetFileContent("D:/Temp")
+target <- GetFileContent("/Documents/DNA/Checked/NC_010403.fna")
 
-target <- GetFileContent("D:/Temp/NC_010403.fna")
-NeedlemanWunschOneToAll("D:/Temp/", target)
+NeedlemanWunschOneToAll("/Documents/DNA/Files/", target)
 
-#----------------------------------------------------------------------------------------------------
-# Porovnavani sekvenci DNA s nastavenim subst matice pro Needlemana
-#-----------------------------------------------------------------------------------------------------
-
+# 4. DNA Specific
 data(BLOSUM50)
 data(BLOSUM45)
 data(BLOSUM100)
 
 #protein subst matice:
 SETTINGS_NEEDLEMANWUNSCH_SUBSTMATRIX <- BLOSUM50
+
 #nebo nukleotidova:
 SETTINGS_NEEDLEMANWUNSCH_SUBSTMATRIX <- MakeNucleotideSubstMatrix(100, -100)  #penalty 100 za shodu a -100 za neshodu
-
 SETTINGS_NEEDLEMANWUNSCH_GAP_PENALTY <- -50
 
 zdroj		= GetFileContent("D:/Mikrosatelity/DNA/Brassica napus clone N2a.txt")
-
 vysledek	= NeedlemanWunschOneToAll("D:/Mikrosatelity/DNA", zdroj)
-
 vysledek	= DamerauLevenstheinSlidingForFolderAndTarget("D:/Mikrosatelity/DNA", zdroj)
-
-
 
 #target	<- "AAAACCCCGGGGTTTT"
 #content <- "AAAACCCCGGGGTTTT"
