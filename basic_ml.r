@@ -188,9 +188,11 @@ EvaluateModelAndPlot <- function(model, trainData, testData, newWindow=T){
 	resultTest	<- EvaluateModel(model, testData)
 
 	layout(matrix(c(1,1,1,1,2,3,4,5), nrow=2, byrow=T))
-	barplot(rbind( unlist(resultTrain$Statistics), unlist(resultTest$Statistics) ), beside=T, ylim=c(0,1), legend.text=c("Train", "Test"), main=model$call)
-	barplot(table(trainData$Y), main="Train Ys")
-	barplot(table(testData$Y), main="Test Ys")
+	data <- round( rbind( unlist(resultTrain$Statistics), unlist(resultTest$Statistics) ), 3)
+	bp <- barplot(data , beside=T, ylim=c(0,1), legend.text=c("Train", "Test"), main=model$call, col=c("grey80", "grey95"))
+	text(bp, data, labels=data, pos=1)
+	barplot(table(trainData$Y)/length(trainData$Y), main="Train Ys Ratios [%]")
+	barplot(table(testData$Y) /length(testData$Y) , main="Test Ys Ratios [%]")
 	PlotConfusionMatrix(resultTrain$Confusionmatrix, "Train Confusion")
 	PlotConfusionMatrix(resultTest$Confusionmatrix, "Test Confusion")
 }
@@ -301,9 +303,9 @@ EvaluateModelAndPlot(bestModelResult$Model, train, test)
 
 ## 3.	MORE ADVANCED 	##########################################################################
 authors		<- read.table("G:/VMOD/Datasety/BOW_FoglarAsimov_1k.txt", encoding="UTF-8", sep="\t", row.names=1, header=T)
-
 authors		<- RemoveGivenColumns(authors, c("TextName", "TextID"))	
-datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", trainToTestRatio=2/3, scaleBy="none")
+
+datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", shuffle=T, trainToTestRatio=6/8, scaleBy="none")
 train		<- datasets$Train
 test		<- datasets$Test
 
