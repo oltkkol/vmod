@@ -99,6 +99,10 @@ LimitTokensInTexts <- function(texts, count, ...){
 
 ## BOW MODEL	###################################################################################
 
+RemoveAllZeroColumns <- function(dataset){
+	return (dataset[, colSums(dataset != 0) > 0])
+}
+
 # Creates BOW model for list of tokenized texts
 # Eg.: MakeBOWModel( list(text1 = c("John", "ate", "an", "apple"), text2 = c("Kate", "ate", "an", "orange") ) )
 MakeBOWModel <- function(tokenizedTexts){
@@ -124,7 +128,7 @@ MakeBOWModel <- function(tokenizedTexts){
 # Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted.
 # See example for ApplyTFIDF
 CalculateTFIDFOnBOW <- function(bowMatrix){
-	bowMatrix	<- bowMatrix[, colSums(bowMatrix != 0) > 0]
+	bowMatrix	<- RemoveAllZeroColumns(bowMatrix)
 
 	N			<- nrow(bowMatrix)
 	Nt			<- apply( bowMatrix, 2, function(colData) sum(colData > 0) )

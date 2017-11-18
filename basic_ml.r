@@ -307,16 +307,21 @@ datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", trainToTestR
 train		<- datasets$Train
 test		<- datasets$Test
 
-model		<- naiveBayes(train$X, train$Y)
-EvaluateModelAndPlot(model, train, test)
+modelNB		<- naiveBayes(train$X, train$Y)
+EvaluateModelAndPlot(modelNB, train, test)
 
-#  - analysis of naive bayes BOW model:
-WORDS = as.data.frame(   t( sapply( model$tables, function(x) x[,1])  ) )
-plot(WORDS)
-text(WORDS[,1], WORDS[,2], rownames(WORDS), pos=1)
+modelSVM	<- svm(train$X, train$Y, kernel="linear")
+EvaluateModelAndPlot(modelSVM, train, test)
 
-model		<- svm(train$X, train$Y, kernel="linear")
-EvaluateModelAndPlot(model, train, test)
+#  Inspect Naive Bayes:
+words	<- as.data.frame(   t( sapply( modelNB$tables, function(x) x[,1])  ) )
+words[ order(-words$Foglar),][1:20,]		# top 10 decisive words for Foglar
+words[ order(-words$Asimov),][1:20,]		# top 10 decisive words for Asimov
+
+
+
+model		<- svm(trainXTFIDF, train$Y, kernel="linear")
+EvaluateModelAndPlot(model, list(X = trainXTFIDF, Y = train$Y), list(X = trainXTFIDF, Y = train$Y))
 
 ## 4.	ULTRA FAST	###############################################################################
 
