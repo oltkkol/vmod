@@ -1,11 +1,24 @@
 ## dependency	###################################################################################
-rlibrary <- function(libraryName){
+rlibrary <- function(libraryName, fInstall = NULL){
 	prequire <- function() return(require(libraryName, character.only=T))
 
 	if (prequire() == F){
-		install.packages(libraryName)
+		if (is.function(fInstall)){
+			fInstall()
+		}else{
+			install.packages(libraryName)
+		}
 		library(libraryName, character.only=T)
 	}
+}
+
+installMXNet <- function(){
+	# http://mxnet.incubator.apache.org/get_started/install.html
+
+	cran <- getOption("repos")
+	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
+	options(repos = cran)
+	install.packages("mxnet")
 }
 
 rlibrary("caTools")
@@ -14,6 +27,7 @@ rlibrary("MASS")
 rlibrary("datasets")
 rlibrary("e1071")
 rlibrary("mlbench")
+rlibrary("mxnet", installMXNet)
 
 ## functions	###################################################################################
 
@@ -22,7 +36,7 @@ ShuffleRows	<- function(dataset){
 	return ( dataset[sample(nrow(dataset)),] )
 }
 
-## Removes given column from dataset
+## Removes given columns from dataset
 ## Eg:	RemoveGivenColumns(iris, c("Species"))
 RemoveGivenColumns <- function(dataset, columnNames){
 	return( dataset[ , -which(names(dataset) %in% columnNames)] )
@@ -36,7 +50,6 @@ KeepOnlyGivenColumns <- function(dataset, columnNames){
 
 ## Removes all rows containing NaN in any column
 RemoveAllNanRows <- function(dataset){
-	#return( dataset[complete.cases(dataset), ] )
 	return ( na.omit(dataset) )
 }
 
@@ -74,48 +87,50 @@ SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio, shuffle=T){
 	return ( list(trainingData = trainingDataSet, testingData = testingDataSet) ) 
 }
 
-## Splits dataset into train and test datasets (with trainToTestRatio) preserving class balance (targetColumnName)
-## and then returning named list with Train and Test datasets with Features X and Targets Y names.
-## Eg: PrepareTrainAndTest(iris, "Species", 2/3) 
-PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3, shuffle=T){
+## Splits dataset into train and test datasets (by trainToTestRatio) preserving class balance (by targetColumnName).
+## Rows can be shuffled before. Datasets can be scaled by scaleBy parameter "none"/"minmax"/"z-score".
+## Returns named list with $Train, $Test datasets with Features $X and Targets $Y names. Scaling info in $ScaleInfo.
+## Eg: PrepareTrainAndTest(iris, "Species", 2/3, shuffle=T, scaleBy="z-score") 
+PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3, shuffle=T, scaleBy="none"){
 	splitDataset <- SplitDataSetTrainTest(dataset, targetColumnName, trainToTestRatio, shuffle)
 
 	train		<- GetXAndY(splitDataset$trainingData,	targetColumnName)
 	test		<- GetXAndY(splitDataset$testingData,	targetColumnName)
 	
-	return ( list(Train = train, Test = test) )
+	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
+	return ( list(Train = scaledDatasets$Train, Test = scaledDatasets$Test, ScaleInfo = scaledDatasets$ScaleInfo ) )
 }
 
 ## Scales train and test dataset by zscore/minmax w.r.t. train dataset
-## Eg:	mySet <- ScaleDatasets( PrepareTrainAndTest(iris, "Species", 2/3), scaleBy="z-score")
-##		hist( mySet$Train$X[,2] )
-
-ScaleDatasets <- function(datasets, scaleBy="z-score"){
-	trainDataset	<- datasets$Train
-	testDataset		<- datasets$Test
-
+## Eg: scaledDatasets <- ScaleDatasets(train, test, scaleBy=scaleBy)
+ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	trainX			<- trainDataset$X
 	testX			<- testDataset$X
 	n				<- ncol(trainX)
-	
-	if (scaleBy == "minmax"){
-		trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
-		trainColsMin	<- apply(trainX, 2, FUN=min)
 
+	trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
+	trainColsMin	<- apply(trainX, 2, FUN=min)
+	trainColsSd		<- apply(trainX, 2, FUN=sd)
+	trainColsMean	<- apply(trainX, 2, FUN=mean)
+
+	if ( scaleBy == "min-max" || scaleBy == "minmax" ){
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMin[col])/trainColsRange[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMin[col])/trainColsRange[col] )
-	}else{
-		trainColsSd		<- apply(trainX, 2, FUN=sd)
-		trainColsMean	<- apply(trainX, 2, FUN=mean)
 
+	}else if ( scaleBy == "z-score" || scaleBy == "zscore" ){
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
+
+	}else{
+		scaledTrainX	<- trainX
+		scaledTestX		<- testX
 	}
 	
-	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y  )
+	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y)
 	outputTest		<- list( X = scaledTestX, 	Y = testDataset$Y )
+	scaleInfo		<- list( Range = trainColsRange, Min = trainColsMin, Sd = trainColsSd, Mean = trainColsMean )
 
-	return ( list(Train = outputTrain, Test = outputTest ) )
+	return ( list(Train = outputTrain, Test = outputTest, ScaleInfo = scaleInfo  ) )
 }
 
 ## Calculates confusion table for given model and given test data
@@ -166,20 +181,61 @@ EvaluateModel <- function(model, testData){
 	)
 }
 
-EvaluateModelAndPlot <- function(model, trainData, testData){
+EvaluateModelAndPlot <- function(model, trainData, testData, newWindow=T){
+	if (newWindow) x11()
+
 	resultTrain <- EvaluateModel(model, trainData)
 	resultTest	<- EvaluateModel(model, testData)
 
-	 barplot(rbind( unlist(resultTrain$Statistics), unlist(resultTest$Statistics) ), beside=T, ylim=c(0,1), legend.text=c("Train", "Test"))
+	layout(matrix(c(1,1,1,1,2,3,4,5), nrow=2, byrow=T))
+	barplot(rbind( unlist(resultTrain$Statistics), unlist(resultTest$Statistics) ), beside=T, ylim=c(0,1), legend.text=c("Train", "Test"), main=model$call)
+	barplot(table(trainData$Y), main="Train Ys")
+	barplot(table(testData$Y), main="Test Ys")
+	PlotConfusionMatrix(resultTrain$Confusionmatrix, "Train Confusion")
+	PlotConfusionMatrix(resultTest$Confusionmatrix, "Test Confusion")
 }
 
-## Trains and evaluates any model with train and test data (list of X, Y), return named list with statistics for both.
+PlotConfusionMatrix <- function(confusionMatrix, title){
+	N <- ncol(confusionMatrix)
+	x <- confusionMatrix
+
+	image( 1:N, 1:N, -(x[, N:1]), 
+			col=colorRampPalette(c(hsv(h = 0, s = 0.9, v = 0.9, alpha = 1), 
+									hsv(h = 0, s = 0, v = 0.9, alpha = 1), 
+									hsv(h = 2/6, s = 0.9, v = 0.9, alpha = 1)))(41), 
+			xlab="", ylab='', xaxt='n', yaxt='n', main=title, zlim=c(-10, 10) )
+
+	axis(1, at=1:N, labels=paste(colnames(x), "'", sep=""))
+	axis(2, at=N:1, labels=colnames(x), las=1)
+	abline(h = 0:N + 0.5, col = 'gray')
+	abline(v = 0:N + 0.5, col = 'gray')
+	text(1:N, rep(N:1, each=N), labels = as.vector(x))
+	box(lwd=2)
+}
+
+EvaluateModelsAndGetBest <- function(models, data, metricName = "Kappa"){
+	bestModel	<- NULL
+	bestValue	<- 0
+
+	for (model in models){
+		value <- EvaluateModel(model, data)$Statistics[[metricName]]
+		if (value > bestValue){
+			bestModel <- model
+			bestValue <- value
+		}
+	}
+
+	return( list(Value = bestValue, Model = bestModel) )
+}
+
+## Trains and evaluates any model with train and test data (list of X, Y), returns named list with trained model & statistics
 ## Eg.: TrainAndEvalute(svm, train, test, kernel="linear")
 TrainAndEvalute	<- function(technique, trainData, testData, ...){
 	model <- technique(trainData$X, trainData$Y, ...)
 	return (list(
-		Train	= EvaluateModel(model, trainData),
-		Test	= EvaluateModel(model, testData)
+		Model			= model,
+		TrainEvaluation	= EvaluateModel(model, trainData),
+		TestEvaluation	= EvaluateModel(model, testData)
 	))
 }
 
@@ -188,7 +244,7 @@ TrainAndEvalute	<- function(technique, trainData, testData, ...){
 ## 1. Simple Examples		#######################################################################
 
 ## IRIS
-datasets	<- PrepareTrainAndTest(iris, "Species", 2/3)
+datasets	<- PrepareTrainAndTest(iris, "Species", 3/4)
 train		<- datasets$Train
 test		<- datasets$Test
 
@@ -202,10 +258,10 @@ EvaluateModelAndPlot(model, train, test)
 ## SONAR
 data(Sonar)
 dataset		<- Sonar
-datasets	<- PrepareTrainAndTest(dataset, "Class", 2/3)
+datasets	<- PrepareTrainAndTest(dataset, "Class", 2/3, scaleBy="minmax")
 
 modelBayes	<- naiveBayes(datasets$Train$X, datasets$Train$Y)
-modelSVM	<- svm(datasets$Train$X, datasets$Train$Y)
+modelSVM	<- svm(datasets$Train$X, datasets$Train$Y, kernel="linear")
 
 EvaluateModelAndPlot(modelBayes,	datasets$Train, datasets$Test)
 EvaluateModelAndPlot(modelSVM,		datasets$Train, datasets$Test)
@@ -213,40 +269,58 @@ EvaluateModelAndPlot(modelSVM,		datasets$Train, datasets$Test)
 ##	2. MORE ADVANCED	###########################################################################
 
 # TITANIC
-titanic				<- read.csv("G:/VMOD/titanic.txt")
+titanic				<- read.csv("G:/VMOD/Datasety/titanic.txt")
 
-# - clear dataset -
+#  - clear data
 dataset				<- KeepOnlyGivenColumns( titanic, c("pclass", "survived", "sex", "age") )
 dataset				<- RemoveAllNanRows(dataset)
 
 dataset$sex			<- as.numeric(dataset$sex)
 dataset$survived	<- as.factor(dataset$survived)
 
-# - prepare dataset -
-datasets	<- PrepareTrainAndTest(dataset, "survived", trainToTestRatio=2/3)
+#  - prepare train/test
+datasets	<- PrepareTrainAndTest(dataset, "survived", trainToTestRatio=2/3, scaleBy="z-score")
 train		<- datasets$Train
 test		<- datasets$Test
 
-## - train multiple models -
+#  - train multiple models
 model1		<- svm(train$X, train$Y, kernel='linear')
 model2		<- svm(train$X, train$Y, kernel='radial')		
 model3		<- svm(train$X, train$Y, kernel='polynomial')
 model4		<- svm(train$X, train$Y, kernel='sigmoid')
-
 model5		<- lda(train$X, train$Y)
 model6		<- qda(train$X, train$Y)
-
 model7		<- naiveBayes(train$X, train$Y)
-
-# - evaluate -
-EvaluateModel(model1, train)
-EvaluateModel(model1, test)
 
 EvaluateModelAndPlot(model1, train, test)
 
-## 3.	ULTRA FAST	###############################################################################
+#  - see best model by Kappa
+models			<- list(model1, model2, model3, model4, model5, model6, model7)
+bestModelResult <- EvaluateModelsAndGetBest(models, train, "Kappa" )
+EvaluateModelAndPlot(bestModelResult$Model, train, test)
 
-authors		<- read.csv("G:/VMOD/Autori.txt", sep="\t")
+## 3.	MORE ADVANCED 	##########################################################################
+authors		<- read.table("G:/VMOD/Datasety/BOW_FoglarAsimov_1k.txt", encoding="UTF-8", sep="\t", row.names=1, header=T)
+
+authors		<- RemoveGivenColumns(authors, c("TextName", "TextID"))	
+datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", trainToTestRatio=2/3, scaleBy="none")
+train		<- datasets$Train
+test		<- datasets$Test
+
+model		<- naiveBayes(train$X, train$Y)
+EvaluateModelAndPlot(model, train, test)
+
+#  - analysis of naive bayes BOW model:
+WORDS = as.data.frame(   t( sapply( model$tables, function(x) x[,1])  ) )
+plot(WORDS)
+text(WORDS[,1], WORDS[,2], rownames(WORDS), pos=1)
+
+model		<- svm(train$X, train$Y, kernel="linear")
+EvaluateModelAndPlot(model, train, test)
+
+## 4.	ULTRA FAST	###############################################################################
+
+authors		<- read.csv("G:/VMOD/Datasety/Autori.txt", sep="\t")
 dataset		<- KeepOnlyGivenColumns( authors, c("Author", "AVGTOKENLEN", "GINISCOEF", "L") )
 
 datasets	<- PrepareTrainAndTest(dataset, "Author", trainToTestRatio=2/3)
@@ -262,8 +336,8 @@ TrainAndEvalute(naiveBayes, train, test)
 
 output <- c()
 for(z in seq(.Machine$double.eps, 2, 0.01)){
-	accuracy <- TrainAndEvalute(svm, train, test, kernel="radial", cost=z)$Train$Statistics$Accuracy
-	output <- rbind(output, c(z, accuracy))
+	accuracy	<- TrainAndEvalute(svm, train, test, kernel="radial", cost=z)$Train$Statistics$Accuracy
+	output		<- rbind(output, c(z, accuracy))
 }
 
 plot(output, xlab="cost", ylab="Accuracy")

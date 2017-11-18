@@ -121,25 +121,30 @@ MakeBOWModel <- function(tokenizedTexts){
 	return (dataMatrix)
 }
 
-# Converts BOW model to TF-IDF 
-# Eg.:	bowModel = MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
-#		normalizedBowModel = ConvertBOWToTFIDF(bowModel, removeZeroCols=F)
-ConvertBOWToTFIDF <- function(bowMatrix, removeZeroCols=T){
-	tf		<- bowMatrix
-	N		<- nrow(bowMatrix)
-	Nt		<- apply( bowMatrix, 2, function(colData) sum(colData > 0) )
-	weights	<- log(N / Nt)	
+# Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted.
+# See example for ApplyTFIDF
+CalculateTFIDFOnBOW <- function(bowMatrix){
+	bowMatrix	<- bowMatrix[, colSums(bowMatrix != 0) > 0]
+
+	N			<- nrow(bowMatrix)
+	Nt			<- apply( bowMatrix, 2, function(colData) sum(colData > 0) )
+	weights		<- log(N / Nt)	
 	
-	result	<- cbind(bowMatrix)
-	terms	<- names(weights)
+	return ( weights[weights != 0] )
+}
 
-	result[,terms] <- t( t(tf[,terms]) * weights[terms] )
+# Applies TF-IDF weighting to terms in bowMatrix. 
+# Eg.:	bowCorpora 	<- MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
+#		weights	 	<- CalculateTFIDFOnBOW(bowCorpora)
+#		tfidfCorpora<- ApplyTFIDF(bowCorpora, weights)
 
-	if (removeZeroCols){
-		result <- result[, colSums(result != 0) > 0]
-	}
+ApplyTFIDF <- function(bowMatrix, weights){
+	terms	<- as.vector( intersect( names(weights), colnames(bowMatrix) ) )
+	result	<- bowMatrix[,terms, drop=FALSE] # omit any term that wasn't in original model dictionary
 
-	return(result)
+	result[,terms]	<- t( t( result[,terms]) * weights[terms] )
+
+	return (result)
 }
 
 ## STRING COMPARISON	###########################################################################
@@ -246,9 +251,15 @@ files			<- GetFilesContentsFromFolder("C:/Test")
 tokenizedFiles	<- TokenizeTexts(files)
 tokenizedFiles	<- LimitTokensInTexts(tokenizedFiles, count=100, takeRandom=T)
 bow				<- MakeBOWModel(tokenizedFiles)			
-tfidfBow		<- ConvertBOWToTFIDF(bow)
 
-resultSVD		<- svd(tfidfBow)
+weights			<- CalculateTFIDFOnBOW(bow)
+bowTFIDF		<- ApplyTFIDF(bow, weights)
+
+targetTextBow	<- MakeBOWModel( list(text1=
+									TokenizeText(
+										GetFileContent("C:/Test/Target/svejk_24.txt"))) )
+										
+targetTextBowTFIDF	<- ApplyTFIDF(targetTextBow, weights)
 
 # 3. Text searching
 DamerauLevenstheinSliding("ABCDEFGH", "FGHJ")
