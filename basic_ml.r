@@ -47,7 +47,7 @@ RemoveAllZeroColumns <- function(dataset){
 
 ## Clears dataset: Removes all rows with NaN and all columns with 0s only
 ClearDataset <- function(dataset){
-	return (RemoveAllZeroColumns(RemoveAllNanRows(dataset)))
+	return ( RemoveAllZeroColumns(RemoveAllNanRows(dataset)) )
 }
 
 ## Gets named list of X (features) and Y (targets) from given dataset
@@ -56,7 +56,7 @@ GetXAndY <- function(dataset, targetColumnName){
 	X = RemoveGivenColumns(dataset, c(targetColumnName))
 	Y = KeepOnlyGivenColumns(dataset, c(targetColumnName))
 
-	return (list(X = X, Y = Y ) )
+	return ( list(X = X, Y = Y ) )
 }
 
 ## Splits dataset into training and testing by ratio with class ratio preserved in both sets
@@ -84,6 +84,38 @@ PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3,
 	test		<- GetXAndY(splitDataset$testingData,	targetColumnName)
 	
 	return ( list(Train = train, Test = test) )
+}
+
+## Scales train and test dataset by zscore/minmax w.r.t. train dataset
+## Eg:	mySet <- ScaleDatasets( PrepareTrainAndTest(iris, "Species", 2/3), scaleBy="z-score")
+##		hist( mySet$Train$X[,2] )
+
+ScaleDatasets <- function(datasets, scaleBy="z-score"){
+	trainDataset	<- datasets$Train
+	testDataset		<- datasets$Test
+
+	trainX			<- trainDataset$X
+	testX			<- testDataset$X
+	n				<- ncol(trainX)
+	
+	if (scaleBy == "minmax"){
+		trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
+		trainColsMin	<- apply(trainX, 2, FUN=min)
+
+		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMin[col])/trainColsRange[col] )
+		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMin[col])/trainColsRange[col] )
+	}else{
+		trainColsSd		<- apply(trainX, 2, FUN=sd)
+		trainColsMean	<- apply(trainX, 2, FUN=mean)
+
+		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
+		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
+	}
+	
+	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y  )
+	outputTest		<- list( X = scaledTestX, 	Y = testDataset$Y )
+
+	return ( list(Train = outputTrain, Test = outputTest ) )
 }
 
 ## Calculates confusion table for given model and given test data
