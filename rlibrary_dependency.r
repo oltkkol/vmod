@@ -10,3 +10,9 @@ rlibrary <- function(libraryName, fInstall = NULL){
 		library(libraryName, character.only=T)
 	}
 }
+
+stop_quietly <- function() {
+  opt <- options(show.error.messages = FALSE)
+  on.exit(options(opt))
+  stop()
+}

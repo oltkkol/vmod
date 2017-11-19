@@ -228,7 +228,7 @@ TrainAndEvalute	<- function(technique, trainData, testData, ...){
 }
 
 ###################################################################################################
-stop("-O not really, all is ok... ;)")
+stop_quietly();
 
 ## 1. Simple Examples		#######################################################################
 
