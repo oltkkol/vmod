@@ -7,6 +7,7 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependenc
 rlibrary("stringi")
 rlibrary("proxy")
 rlibrary("stringdist")
+rlibrary("stringr")
 rlibrary("Biostrings", function(){
 	source("https://bioconductor.org/biocLite.R")
 	biocLite("Biostrings")
