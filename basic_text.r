@@ -1,19 +1,15 @@
-## INSTALL ########################################################################################
+## DEPENDENCY #####################################################################################
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r")
 
-if (! "Biostrings" %in% installed.packages() ){
-	install.packages("stringdist")
-	install.packages("stringi")
-	install.packages("proxy")
+installBiostrings <- function(){
 	source("https://bioconductor.org/biocLite.R")
 	biocLite("Biostrings")
 }
 
-## DEPENDENCY	###################################################################################
-
-library(stringi)
-library(proxy)
-library(stringdist)
-library(Biostrings)
+rlibrary("stringi")
+rlibrary("proxy")
+rlibrary("stringdist")
+rlibrary("Biostrings", installBiostrings)
 
 Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
 Sys.getlocale(category="LC_ALL")
@@ -22,7 +18,7 @@ Sys.getlocale(category="LC_ALL")
 
 # reads content of file as plain text
 GetFileContent <- function(fileName){
-	 readedText <- readLines(fileName, encoding='UTF-8')
+	 readedText <- readLines(fileName, encoding="UTF-8")
 	 readedText <- do.call(paste, c(as.list(readedText), sep=" "))
 	 return(readedText)
 }

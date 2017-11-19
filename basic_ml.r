@@ -1,20 +1,8 @@
 ## dependency	###################################################################################
-rlibrary <- function(libraryName, fInstall = NULL){
-	prequire <- function() return(require(libraryName, character.only=T))
-
-	if (prequire() == F){
-		if (is.function(fInstall)){
-			fInstall()
-		}else{
-			install.packages(libraryName)
-		}
-		library(libraryName, character.only=T)
-	}
-}
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r")
 
 installMXNet <- function(){
 	# http://mxnet.incubator.apache.org/get_started/install.html
-
 	cran <- getOption("repos")
 	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
 	options(repos = cran)
@@ -28,6 +16,8 @@ rlibrary("datasets")
 rlibrary("e1071")
 rlibrary("mlbench")
 rlibrary("mxnet", installMXNet)
+
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r")
 
 ## functions	###################################################################################
 
