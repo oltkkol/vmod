@@ -1,5 +1,5 @@
 ## DEPENDENCY #####################################################################################
-source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r")
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
 
 rlibrary("stringi")
 rlibrary("proxy")
@@ -8,6 +8,9 @@ rlibrary("Biostrings", function(){
 	source("https://bioconductor.org/biocLite.R")
 	biocLite("Biostrings")
 })
+
+Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
+Sys.getlocale(category="LC_ALL")
 
 ## FILE WORK	###################################################################################
 

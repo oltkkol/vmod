@@ -1,14 +1,6 @@
 ## dependency	###################################################################################
-source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r")
-source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r")
-
-installMXNet <- function(){
-	# http://mxnet.incubator.apache.org/get_started/install.html
-	cran <- getOption("repos")
-	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
-	options(repos = cran)
-	install.packages("mxnet")
-}
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", encoding="UTF-8")
 
 rlibrary("caTools")
 rlibrary("e1071")
@@ -16,9 +8,12 @@ rlibrary("MASS")
 rlibrary("datasets")
 rlibrary("e1071")
 rlibrary("mlbench")
-rlibrary("mxnet", installMXNet)
-
-
+rlibrary("mxnet", function(){	# see http://mxnet.incubator.apache.org/get_started/install.html
+	cran <- getOption("repos")
+	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
+	options(repos = cran)
+	install.packages("mxnet")
+})
 
 ## functions	###################################################################################
 
