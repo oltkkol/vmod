@@ -35,10 +35,12 @@ GetFilesContentsFromFolder <- function(folderPath, prependNameBy=NULL){
 		output[file] <- getFileContentFromFolderFile(file)
 	}
 
-	if (is.null(prependNameBy) == FALSE){
-		names(output) <- paste(prependNameBy, names(output))
+	if (length(output) > 0){
+		if (is.null(prependNameBy) == FALSE){
+			names(output) <- paste(prependNameBy, names(output))
+		}
 	}
-
+	
 	return (output);
 }
 
