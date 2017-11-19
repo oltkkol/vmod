@@ -320,11 +320,6 @@ words	<- as.data.frame(   t( sapply( modelNB$tables, function(x) x[,1])  ) )
 words[ order(-words$Foglar),][1:20,]		# top 10 decisive words for Foglar
 words[ order(-words$Asimov),][1:20,]		# top 10 decisive words for Asimov
 
-
-
-model		<- svm(trainXTFIDF, train$Y, kernel="linear")
-EvaluateModelAndPlot(model, list(X = trainXTFIDF, Y = train$Y), list(X = trainXTFIDF, Y = train$Y))
-
 ## 4.	ULTRA FAST	###############################################################################
 
 authors		<- read.csv("G:/VMOD/Datasety/Autori.txt", sep="\t")
@@ -334,6 +329,7 @@ datasets	<- PrepareTrainAndTest(dataset, "Author", trainToTestRatio=2/3)
 train		<- datasets$Train
 test		<- datasets$Test
 
+#  - train multiple models
 TrainAndEvalute(svm, train, test, kernel="linear")
 TrainAndEvalute(svm, train, test, kernel="radial")
 TrainAndEvalute(svm, train, test, kernel="polynomial")
