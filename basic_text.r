@@ -9,9 +9,6 @@ rlibrary("Biostrings", function(){
 	biocLite("Biostrings")
 })
 
-Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
-Sys.getlocale(category="LC_ALL")
-
 ## FILE WORK	###################################################################################
 
 # reads content of file as plain text
