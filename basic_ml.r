@@ -26,13 +26,13 @@ ShuffleRows	<- function(dataset){
 ## Removes given columns from dataset
 ## Eg:	RemoveGivenColumns(iris, c("Species"))
 RemoveGivenColumns <- function(dataset, columnNames){
-	return( dataset[ , -which(names(dataset) %in% columnNames)] )
+	return( dataset[ , -which(colnames(dataset) %in% columnNames)] )
 }
 
 ## Gets dataset with only given columns
 ## Eg:  KeepOnlyGivenColumns( TITANIC, c("pclass", "survived", "sex", "age") )
 KeepOnlyGivenColumns <- function(dataset, columnNames){
-	return( dataset[ , which(names(dataset) %in% columnNames)] )
+	return( dataset[ , which(colnames(dataset) %in% columnNames)] )
 }
 
 ## Removes all rows containing NaN in any column
@@ -53,8 +53,9 @@ ClearDataset <- function(dataset){
 ## Gets named list of X (features) and Y (targets) from given dataset
 ## Eg: GetXAndY(iris, "Species")
 GetXAndY <- function(dataset, targetColumnName){
-	X = RemoveGivenColumns(dataset, c(targetColumnName))
-	Y = as.factor( KeepOnlyGivenColumns(dataset, c(targetColumnName)) )
+	X = RemoveGivenColumns(dataset, c(targetColumnName)) 
+	X = apply(X, 2, FUN=as.numeric)
+	Y = as.factor(  KeepOnlyGivenColumns(dataset, c(targetColumnName)) )
 
 	return ( list(X = X, Y = Y ) )
 }
@@ -103,25 +104,25 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	testX			<- testDataset$X
 	n				<- ncol(trainX)
 
-	scaleInfo		<- list()	
-	trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
-	trainColsMin	<- apply(trainX, 2, FUN=min)
-	trainColsSd		<- apply(trainX, 2, FUN=sd)
-	trainColsMean	<- apply(trainX, 2, FUN=mean)
-
 	if ( scaleBy == "min-max" || scaleBy == "minmax" ){
+		trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
+		trainColsMin	<- apply(trainX, 2, FUN=min)
+
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMin[col])/trainColsRange[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMin[col])/trainColsRange[col] )
 		scaleInfo		<- list( Min = trainColsMin, Range = trainColsRange )
 
 	}else if ( scaleBy == "z-score" || scaleBy == "zscore" ){
+		trainColsSd		<- apply(trainX, 2, FUN=sd)
+		trainColsMean	<- apply(trainX, 2, FUN=mean)
+
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
-
 		scaleInfo		<- list( Sd = trainColsSd, Mean = trainColsMean )
 	}else{
 		scaledTrainX	<- trainX
 		scaledTestX		<- testX
+		scaleInfo		<- list()
 	}
 	
 	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y)

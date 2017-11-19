@@ -12,7 +12,7 @@ foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Fog
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-numberOfTokens		<- 10000
+numberOfTokens		<- 100
 asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
@@ -58,6 +58,7 @@ weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar)
 keepingWords		<- names(weights)
 
 allBOWFiltered		<- KeepOnlyGivenColumns(allBOW, keepingWords)
+allBOWFiltered		<- BinarizeMatrix(allBOWFiltered)
 
 sprintf("Original BOW has: %d words, filtered by TF-IDF has: %d words", ncol(allBOW), ncol(allBOWFiltered))
 
