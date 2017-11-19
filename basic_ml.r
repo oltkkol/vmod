@@ -54,7 +54,7 @@ ClearDataset <- function(dataset){
 ## Eg: GetXAndY(iris, "Species")
 GetXAndY <- function(dataset, targetColumnName){
 	X = RemoveGivenColumns(dataset, c(targetColumnName))
-	Y = KeepOnlyGivenColumns(dataset, c(targetColumnName))
+	Y = as.factor( KeepOnlyGivenColumns(dataset, c(targetColumnName)) )
 
 	return ( list(X = X, Y = Y ) )
 }
@@ -128,6 +128,10 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	outputTest		<- list( X = scaledTestX, 	Y = testDataset$Y )
 
 	return ( list(Train = outputTrain, Test = outputTest, ScaleInfo = scaleInfo  ) )
+}
+
+BinarizeMatrix <- function(matrix){
+	return ( as.matrix( (matrix>0)+0 ) )
 }
 
 ## Calculates confusion table for given model and given test data

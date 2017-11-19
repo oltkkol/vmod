@@ -138,7 +138,7 @@ MakeBOWModel <- function(tokenizedTexts){
 	return ( as.data.frame( dataMatrix) )
 }
 
-# Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted.
+# Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted!
 # See example for ApplyTFIDF
 CalculateTFIDFOnBOW <- function(bowMatrix){
 	bowMatrix	<- RemoveAllZeroColumns(bowMatrix)
@@ -150,7 +150,7 @@ CalculateTFIDFOnBOW <- function(bowMatrix){
 	return ( weights[weights != 0] )
 }
 
-# Applies TF-IDF weighting to terms in bowMatrix. 
+# Applies TF-IDF weighting to terms in bowMatrix.
 # Eg.:	bowCorpora 	<- MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
 #		weights	 	<- CalculateTFIDFOnBOW(bowCorpora)
 #		tfidfCorpora<- ApplyTFIDF(bowCorpora, weights)

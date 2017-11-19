@@ -12,8 +12,9 @@ foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Fog
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=2)
-foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=2)
+numberOfTokens		<- 10000
+asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
+foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)
@@ -33,14 +34,15 @@ modelNB         <- naiveBayes(train$X, train$Y)
 EvaluateModelAndPlot(modelSVM, train, test)
 EvaluateModelAndPlot(modelNB, train, test)
 
-#  Inspect Naive Bayes:
-InspectNaiveBayes(modelNB, "FOGLAR", 20)	## troubles...
+# Inspect Naive Bayes:
+InspectNaiveBayes(modelNB, "FOGLAR", 20)	
 InspectNaiveBayes(modelNB, "ASIMOV", 20)
 
-# Inspect spatiality
+# Inspect spatiality for SVM
 plot(cmdscale(dist(allBOW)), col=as.numeric(allBOW.Target$AuthorTarget))
 
-## -- Step 2:
+## -- Step 2: Naive TF-IDF ------------------------------------------------------------------
+
 
 ## --	Step 3: Better Approach	-------------------------------------------------------------------
 ## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW
@@ -53,13 +55,15 @@ foglarTokens    	<- TokenizeText(foglarCorpora)
 
 bowAsimovVsFoglar   <- MakeBOWModel( list(Asimov = asimovTokens, Foglar = foglarTokens) )
 weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar)
+keepingWords		<- names(weights)
 
-allTFIDFBOW			<- ApplyTFIDF(allBOW, weights)
-sprintf("Original BOW has: %d, filtered by TF-IDF has: %d", ncol(allBOW), ncol(allTFIDFBOW))
+allBOWFiltered		<- KeepOnlyGivenColumns(allBOW, keepingWords)
 
-allBOWTFIDF.Target	<- FirstColNameWordsToColumn(allTFIDFBOW, "AuthorTarget")
+sprintf("Original BOW has: %d words, filtered by TF-IDF has: %d words", ncol(allBOW), ncol(allBOWFiltered))
 
-datasets        <- PrepareTrainAndTest(allBOWTFIDF.Target, "AuthorTarget", 3/4, scaleBy="none")
+allBOWFiltered.Target	<- FirstColNameWordsToColumn(allBOWFiltered, "AuthorTarget")
+
+datasets        <- PrepareTrainAndTest(allBOWFiltered.Target, "AuthorTarget", 3/4, scaleBy="none")
 train           <- datasets$Train
 test            <- datasets$Test
 
