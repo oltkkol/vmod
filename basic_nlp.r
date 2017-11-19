@@ -31,8 +31,8 @@ EvaluateModelAndPlot(modelNB, train, test)
 
 #  Inspect Naive Bayes:
 words	<- as.data.frame(   t( sapply( modelNB$tables, function(x) x[,1])  ) )
-words[ order(-words$Foglar),][1:20,]		# top 10 decisive words for Foglar
-words[ order(-words$Asimov),][1:20,]		# top 10 decisive words for Asimov
+words[ order(-words$FOGLAR),][1:20,]		# top 10 decisive words for Foglar
+words[ order(-words$ASIMOV),][1:20,]		# top 10 decisive words for Asimov
 
 
 
