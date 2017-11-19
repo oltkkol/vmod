@@ -59,7 +59,7 @@ FirstColNameWordsToColumn <- function(dataMatrix, columnName="CLASS"){
     newMatrix   <- cbind(firstWords, dataMatrix)
     colnames(newMatrix)[1] <- columnName
     
-    return(newMatrix)
+    return(as.data.frame(newMatrix))
 }
 
 ## TEXT WORK	###################################################################################

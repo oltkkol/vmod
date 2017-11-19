@@ -7,7 +7,7 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 ##	Naive approach, TF-IDF
 
 asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
+foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Verne", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
