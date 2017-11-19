@@ -5,25 +5,23 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 ##
 ## Example 1 -- Bag Of Words vs language vs Authorship attribution
 
-#  1. Read both authors files
 asimovFiles     <- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
 foglarFiles     <- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
-#  2. Process texts & make bag-of-words
-allFiles        <- append(asimovFiles, foglarFiles)
-allTokens       <- TokenizeTexts(allFiles)
-allTokens       <- LimitTokensInTexts(allTokens, count=100, takeRandom=TRUE)
-allBOW          <- MakeBOWModel(allTokens)
+allFiles		<- append(asimovFiles, foglarFiles)
+allTokens		<- TokenizeTexts(allFiles)
+allTokens		<- LimitTokensInTexts(allTokens, count=500, takeRandom=TRUE, onlyOnce=T)
+allBOW			<- MakeBOWModel(allTokens)
 
-#  3. Set AuthorTarget as class by prepended authors name
-allBOWDataset   <- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
+sprintf("BOW has %d words", ncol(allBOW))
 
-#  4. Build Train/Test datasets
-datasets        <- PrepareTrainAndTest(allBOWDataset, "AuthorTarget", 3/4, scaleBy="none")
+allBOW.Target	<- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
+
+#  Build Train/Test datasets
+datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 3/4, scaleBy="none")
 train           <- datasets$Train
 test            <- datasets$Test
 
-#  5. Train models
 modelSVM		    <- svm(train$X, train$Y, kernel='linear')
 modelNB             <- naiveBayes(train$X, train$Y)
 
@@ -35,16 +33,20 @@ words	<- as.data.frame(   t( sapply( modelNB$tables, function(x) x[,1])  ) )
 words[ order(-words$FOGLAR),][1:20,]		# top 10 decisive words for Foglar
 words[ order(-words$ASIMOV),][1:20,]		# top 10 decisive words for Asimov
 
+##
+## Example 2 -- Bag Of Words vs language vs Authorship attribution 2
+## Goal: Use TF-IDF for removing words common for both Asimov and Foglar
 
+asimovCorpora   	<- MergeTexts(asimovFiles)
+foglarCorpora   	<- MergeTexts(foglarFiles)
 
-
-asimovCorpora   <- MergeTexts(asimovFiles)
-foglarCorpora   <- MergeTexts(foglarFiles)
-
-asimovTokens    <- TokenizeText(asimovCorpora)
-foglarTokens    <- TokenizeText(foglarCorpora)
+asimovTokens    	<- LimitTokens( TokenizeText(asimovCorpora), count=100)
+foglarTokens    	<- LimitTokens( TokenizeText(foglarCorpora), count=100)
 
 bowAsimovVsFoglar   <- MakeBOWModel( list(Asimov = asimovTokens, Foglar = foglarTokens) )
 weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar)
 
 bowTFIDFied         <- ApplyTFIDF(bowAsimovVsFoglar, weights)
+
+sprintf("Original BOW has: %d, filtered by TF-IDF has: %d", ncol(bowAsimovVsFoglar), ncol(bowTFIDFied))
+

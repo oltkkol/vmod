@@ -95,12 +95,12 @@ GetTypes <- function(tokensList){
 	return( unique(tokensList) )
 }
 
-# Gets only given number of tokens; if takeRandom=T, random count of tokens will be returned
+# Gets only given number of tokens; takeRandom=T takes N random tokens, onlyOnce=T each position only once
 # Eg.: LimitTokens( c("well", "that's", "great", "i", "can", "take", "any"), count=3, takeRandom=T )
-LimitTokens <- function(tokensList, count, takeRandom=F){
+LimitTokens <- function(tokensList, count, takeRandom=F, onlyOnce=T){
 	output <- tokensList
 	if (takeRandom == T){
-		output <- sample(output)
+		output <- sample(output, replace=!onlyOnce)
 	}
 
 	return (output[1:min(count, length(output))])
