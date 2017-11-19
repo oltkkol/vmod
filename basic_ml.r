@@ -1,5 +1,6 @@
 ## dependency	###################################################################################
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r")
+source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r")
 
 installMXNet <- function(){
 	# http://mxnet.incubator.apache.org/get_started/install.html
@@ -17,7 +18,7 @@ rlibrary("e1071")
 rlibrary("mlbench")
 rlibrary("mxnet", installMXNet)
 
-source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r")
+
 
 ## functions	###################################################################################
 

@@ -18,9 +18,9 @@ Sys.getlocale(category="LC_ALL")
 
 # reads content of file as plain text
 GetFileContent <- function(fileName){
-	 readedText <- readLines(fileName, encoding="UTF-8")
-	 readedText <- do.call(paste, c(as.list(readedText), sep=" "))
-	 return(readedText)
+	readedText <- readLines(fileName, encoding="UTF-8")
+	readedText <- do.call(paste, c(as.list(readedText), sep=" "))
+	return(readedText)
 }
 
 # reads all files and their contents from given folder and saves them into named list
