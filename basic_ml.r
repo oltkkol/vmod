@@ -8,6 +8,7 @@ rlibrary("datasets")
 rlibrary("e1071")
 rlibrary("mlbench")
 rlibrary("stringr")
+rlibrary("klaR")
 rlibrary("mxnet", function(){
 	cran <- getOption("repos")
 	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
