@@ -1,4 +1,4 @@
-## dependency	###################################################################################
+## DEPENDENCY	###################################################################################
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", encoding="UTF-8")
 
