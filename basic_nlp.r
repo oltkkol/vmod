@@ -9,11 +9,11 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
 foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
-asimovFileTokens	<- TokenizeTexts(asimovFiles)
-foglarFileTokens	<- TokenizeTexts(foglarFiles)
+asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
+foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-asimovFileTokens	<- LimitTokensInTexts(asimovFileTokens, count=10)
-foglarFileTokens	<- LimitTokensInTexts(foglarFileTokens, count=10)
+asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=2)
+foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=2)
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)

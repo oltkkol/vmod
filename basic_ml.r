@@ -84,6 +84,14 @@ PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3,
 	train		<- GetXAndY(splitDataset$trainingData,	targetColumnName)
 	test		<- GetXAndY(splitDataset$testingData,	targetColumnName)
 	
+	#migt happen that some features are present only in Test samples, this feature shall be removed.
+	newTrainX		<- RemoveAllZeroColumns(train$X)	
+	keptFeatures	<- colnames(newTrainX)
+	newTestX		<- KeepOnlyGivenColumns(test$X, keptFeatures)
+
+	train$X			<- newTrainX
+	test$X			<- newTestX
+	
 	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
 	return ( list(Train = scaledDatasets$Train, Test = scaledDatasets$Test, ScaleInfo = scaledDatasets$ScaleInfo ) )
 }
