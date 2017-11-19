@@ -23,7 +23,8 @@ GetFileContent <- function(fileName){
 
 # reads all files and their contents from given folder and saves them into named list
 # Eg.: GetFilesContentsFromFolder("/Documents/Texts/")
-GetFilesContentsFromFolder <- function(folderPath){
+# Eg.: GetFilesContentsFromFolder("/Documents/Asimov/", "ASIMOV")	#... prepends all names with ASIMOV
+GetFilesContentsFromFolder <- function(folderPath, prependNameBy=NULL){
 	getFileContentFromFolderFile <- function(fileName)	{
 		fileName <- paste(folderPath, fileName, sep="/")
 		return( GetFileContent(fileName) )
@@ -34,6 +35,10 @@ GetFilesContentsFromFolder <- function(folderPath){
 		output[file] <- getFileContentFromFolderFile(file)
 	}
 
+	if (is.null(prependNameBy) == FALSE){
+		names(output) <- paste(prependNameBy, names(output))
+	}
+
 	return (output);
 }
 
@@ -41,6 +46,17 @@ GetFilesContentsFromFolder <- function(folderPath){
 # Eg.: MergeTexts( c("hello", "there")  )
 MergeTexts <- function(texts){
 	return( do.call(paste, c(as.list(texts), sep=" ")) )
+}
+
+# adds a new column "CLASS" with first word from column names
+# Eg.:	allBOW			<- MakeBOWModel(allTokens)
+#		allBOWWithClass <- UseMatrixFirstColNameWordAsClassName(allBOW)
+FirstColNameWordsToColumn <- function(dataMatrix, columnName="CLASS"){
+    firstWords  <- str_match( rownames(dataMatrix) , "^\\w+")
+    newMatrix   <- cbind(firstWords, dataMatrix)
+    colnames(newMatrix)[1] <- columnName
+    
+    return(newMatrix)
 }
 
 ## TEXT WORK	###################################################################################
@@ -116,7 +132,7 @@ MakeBOWModel <- function(tokenizedTexts){
 		dataMatrix[textName, types] <- f[types]
 	}
 
-	return (dataMatrix)
+	return ( as.data.frame( dataMatrix) )
 }
 
 # Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted.

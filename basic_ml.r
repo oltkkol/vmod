@@ -94,6 +94,7 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	testX			<- testDataset$X
 	n				<- ncol(trainX)
 
+	scaleInfo		<- list()	
 	trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
 	trainColsMin	<- apply(trainX, 2, FUN=min)
 	trainColsSd		<- apply(trainX, 2, FUN=sd)
@@ -102,11 +103,13 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	if ( scaleBy == "min-max" || scaleBy == "minmax" ){
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMin[col])/trainColsRange[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMin[col])/trainColsRange[col] )
+		scaleInfo		<- list( Min = trainColsMin, Range = trainColsRange )
 
 	}else if ( scaleBy == "z-score" || scaleBy == "zscore" ){
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
 
+		scaleInfo		<- list( Sd = trainColsSd, Mean = trainColsMean )
 	}else{
 		scaledTrainX	<- trainX
 		scaledTestX		<- testX
@@ -114,7 +117,6 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	
 	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y)
 	outputTest		<- list( X = scaledTestX, 	Y = testDataset$Y )
-	scaleInfo		<- list( Range = trainColsRange, Min = trainColsMin, Sd = trainColsSd, Mean = trainColsMean )
 
 	return ( list(Train = outputTrain, Test = outputTest, ScaleInfo = scaleInfo  ) )
 }
