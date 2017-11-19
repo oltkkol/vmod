@@ -227,6 +227,7 @@ MakeNucleotideSubstMatrix <- function(match = 1, mismatch = -1){
 
 ###################################################################################################
 stop()
+cat("All BASIC_TEXT functions succesfully defined.")
 
 ## EXAMPLES	#######################################################################################
 
