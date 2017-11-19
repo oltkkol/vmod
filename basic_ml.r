@@ -219,6 +219,12 @@ EvaluateModelsAndGetBest <- function(models, data, metricName = "Kappa"){
 	return( list(Value = bestValue, Model = bestModel) )
 }
 
+## Returns top N variables used for className by Naive Bayes model
+InspectNaiveBayes <- function(trainedNaiveBayes, className, topDecisiveCount=20){
+	vars <- as.data.frame(   t( sapply( trainedNaiveBayes$tables, function(x) x[,1])  ) )
+	return( vars[ order(-vars[,className]),][1:topDecisiveCount,] )
+}
+
 ## Trains and evaluates any model with train and test data (list of X, Y), returns named list with trained model & statistics
 ## Eg.: TrainAndEvalute(svm, train, test, kernel="linear")
 TrainAndEvalute	<- function(technique, trainData, testData, ...){
