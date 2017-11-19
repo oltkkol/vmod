@@ -230,6 +230,8 @@ EvaluateModelsAndGetBest <- function(models, data, metricName = "Kappa"){
 ## Returns top N variables used for className by Naive Bayes model.
 InspectNaiveBayes <- function(trainedNaiveBayes, className, topDecisiveCount=20){
 	vars <- as.data.frame(   t( sapply( trainedNaiveBayes$tables, function(x) x[,1])  ) )
+
+	topDecisiveCount <- min(nrow(vars), topDecisiveCount)
 	return( vars[ order(-vars[,className]),][1:topDecisiveCount,] )
 }
 
