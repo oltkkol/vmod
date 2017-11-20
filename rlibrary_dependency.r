@@ -16,3 +16,5 @@ stop_quietly <- function() {
   on.exit(options(opt))
   stop()
 }
+
+rlibrary("brew")
