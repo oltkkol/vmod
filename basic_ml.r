@@ -80,7 +80,7 @@ SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio, shuffle=T){
 ## Rows can be shuffled before. Datasets can be scaled by scaleBy parameter "none"/"minmax"/"z-score".
 ## Returns named list with $Train, $Test datasets with Features $X and Targets $Y names. Scaling info in $ScaleInfo.
 ## Eg: PrepareTrainAndTest(iris, "Species", 2/3, shuffle=T, scaleBy="z-score") 
-PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3, shuffle=T, scaleBy="none"){
+PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3, shuffle=T, scaleBy="none", convertToFactors=F){
 	splitDataset <- SplitDataSetTrainTest(dataset, targetColumnName, trainToTestRatio, shuffle)
 
 	train		<- GetXAndY(splitDataset$trainingData,	targetColumnName)
@@ -93,6 +93,11 @@ PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3,
 
 	train$X			<- as.data.frame( newTrainX )
 	test$X			<- as.data.frame( newTestX )
+
+	if (convertToFactors == T){
+		train$X		<- DataFrameToFactor(train$X)
+		test$X		<- DataFrameToFactor(test$X)
+	}
 	
 	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
 	return ( list(Train = scaledDatasets$Train, Test = scaledDatasets$Test, ScaleInfo = scaledDatasets$ScaleInfo ) )
@@ -132,9 +137,14 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	return ( list(Train = outputTrain, Test = outputTest, ScaleInfo = scaleInfo  ) )
 }
 
-BinarizeMatrix <- function(matrix){
-	return ( as.matrix( (matrix>0)+0 ) )
+BinarizeDataFrame <- function(df){
+	return ( as.data.frame( (df>0)+0 ) )
 }
+
+DataFrameToFactor <- function(df){
+	return( data.frame(lapply(df, as.factor)) )
+}
+
 
 ## Calculates confusion table for given model and given test data
 PredictAndMakeConfussionMatrix <- function(model, testData){
@@ -235,10 +245,27 @@ EvaluateModelsAndGetBest <- function(models, data, metricName = "Kappa"){
 
 ## Returns top N variables used for className by Naive Bayes model.
 InspectNaiveBayes <- function(trainedNaiveBayes, className, topDecisiveCount=20){
-	vars <- as.data.frame(   t( sapply( trainedNaiveBayes$tables, function(x) x[,1])  ) )
+	output				<- data.frame(stringsAsFactors=FALSE)
+	variableNames		<- names(trainedNaiveBayes$tables)
+	
+	for(i in 1:length(trainedNaiveBayes$tables)){
+		toAdd <- NULL
+		value <- trainedNaiveBayes$tables[[i]]
+		
+		if ("1" %in% colnames(value)) {
+			x <- value[,"1"][className]
+			if (x != 0){
+				output <- rbind( output, cbind(variableNames[i], x) )
+			}
+		}
+	}
 
-	topDecisiveCount <- min(nrow(vars), topDecisiveCount)
-	return( vars[ order(-vars[,className]),][1:topDecisiveCount,] )
+	rownames(output)	<- NULL
+	colnames(output)	<- c("Variable", "P")
+	topDecisiveCount	<- min(topDecisiveCount, nrow(output))
+	output 				<- output[order(as.numeric( output$P )), ]
+
+	return(output[1:topDecisiveCount, ])
 }
 
 ## Trains and evaluates any model with train and test data (list of X, Y), returns named list with trained model & statistics
@@ -247,7 +274,7 @@ TrainAndEvalute	<- function(technique, trainData, testData, ...){
 	model <- technique(trainData$X, trainData$Y, ...)
 	return (list(
 		Model			= model,
-		TrainEvaluation	= EvaluateModel(model, trainData),
+		TrainEvaluation	= EvaluateModel(model, trainData),	
 		TestEvaluation	= EvaluateModel(model, testData)
 	))
 }

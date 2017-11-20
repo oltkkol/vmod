@@ -5,6 +5,36 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 
 ####################################################################################################
 
+##  EXMAPLE 0
+##  Simple examle
+
+adamFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/Adam", "Adam")
+henryFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/HenryVegetarian", "HenryVegetarian")
+
+#  - inspect files
+adamFiles
+henryFiles
+
+#  - tokenize
+adamTokens		<- TokenizeTexts(adamFiles)
+henryTokens		<- TokenizeTexts(henryFiles)
+allTokens		<- append(adamTokens, henryTokens)
+
+#  - build BOW
+allBOW			<- MakeBOWModel(allTokens)
+allBOW
+
+#  - prepare for training
+allBOW			<- FirstColNameWordsToColumn(allBOW)
+datasets		<- PrepareTrainAndTest(allBOW, "CLASS", 1/2, scaleBy="none", convertToFactors=T)
+
+modelNB			<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+EvaluateModelAndPlot(modelNB, datasets$Train, datasets$Test)
+
+#  - inspect model
+InspectNaiveBayes(modelNB, "Adam")
+InspectNaiveBayes(modelNB, "HenryVegetarian")
+
 ##	EXAMPLE 1
 ##	Bag Of Words vs language vs Authorship attribution
 ##	Naive approach, TF-IDF
@@ -21,7 +51,7 @@ foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)
-allBOW			<- BinarizeMatrix(allBOW)
+allBOW			<- BinarizeDataFrame(allBOW)
 
 sprintf("BOW has %d words", ncol(allBOW))
 
