@@ -49,24 +49,21 @@ allBOW			<- MakeBOWModel(allTokens)
 sprintf("BOW has %d words", ncol(allBOW))
 
 ## --	Step 1: Naive Approach	-------------------------------------------------------------------
-allBOW.Target	<- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
+allBOW.Target   <- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
-train           <- datasets$Train
-test            <- datasets$Test
+#  - binary data (see convertToFactors=TRUE & scaleBy="binarize")
+datasets    <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
+m			<- naiveBayes(datasets$Train$X, datasets$Train$Y)
 
-#  - train SVM
-modelSVM		<- svm(train$X, train$Y, kernel='linear')
-EvaluateModelAndPlot(modelSVM, train, test)
+EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
 
-modelNB         <- naiveBayes(train$X, train$Y)
-EvaluateModelAndPlot(modelNB, train, test)
+#  - train on frequencies (see convertToFactors=FALSE & scaleBy="none")
+datasets	<- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none", convertToFactors=FALSE)
+m			<- svm(datasets$Train$X, datasets$Train$Y)
+n			<- naiveBayes(datasets$Train$X, datasets$Train$Y, laplace=1)
 
-#  - inspection of models
-#InspectNaiveBayes(modelNB, "ASIMOV")
-#InspectNaiveBayes(modelNB, "FOGLAR")
-
-#plot(cmdscale(dist(allBOW)), col=as.numeric(as.factor(allBOW.Target$AuthorTarget)))
+EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
+EvaluateModelAndPlot(n, datasets$Train, datasets$Test)
 
 ## --	Step 2: TFIDF	-------------------------------------------------------------------
 ## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW
