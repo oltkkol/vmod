@@ -39,13 +39,13 @@ InspectNaiveBayes(modelNB, "HenryVegetarian")
 ##	Bag Of Words vs language vs Authorship attribution
 ##	Naive approach, TF-IDF
 
-asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Lem", "FOGLAR")
+asimovFiles			<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
+foglarFiles			<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-numberOfTokens		<- 1000
+numberOfTokens		<- 2000
 asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
@@ -58,31 +58,17 @@ sprintf("BOW has %d words", ncol(allBOW))
 ## --	Step 1: Naive Approach	-------------------------------------------------------------------
 allBOW.Target	<- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none")
+datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none", convertToFactors=FALSE)
 train           <- datasets$Train
 test            <- datasets$Test
 
-train$X			<- as.data.frame(train$X)
-test$X			<- as.data.frame(test$X)
-
 modelSVM		<- svm(train$X, train$Y, kernel='linear')
-modelNB         <- naiveBayes(train$X, train$Y)
 
 EvaluateModelAndPlot(modelSVM, train, test)
-EvaluateModelAndPlot(modelNB, train, test)
 
-
-# Inspect Naive Bayes:
-InspectNaiveBayes(modelNB, "FOGLAR", 20)	
-InspectNaiveBayes(modelNB, "ASIMOV", 20)
-
-# Inspect spatiality for SVM
 plot(cmdscale(dist(allBOW)), col=as.numeric(as.factor(allBOW.Target$AuthorTarget)))
 
-## -- Step 2: Naive TF-IDF ------------------------------------------------------------------
-
-
-## --	Step 3: Better Approach	-------------------------------------------------------------------
+## --	Step 2: TFIDF	-------------------------------------------------------------------
 ## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW
 
 asimovCorpora   	<- MergeTexts(asimovFiles)
