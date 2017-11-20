@@ -30,6 +30,25 @@ RemoveAllZeroColumns <- function(dataset){
 	return (dataset[, colSums(dataset != 0) > 0])
 }
 
+## Removes all columns with zeros
+RemoveAllZeroRows <- function(dataset){
+	return (dataset[rowSums(dataset != 0) > 0, ])
+}
+
+RemoveAllZeroVarianceRows <- function(dataset){
+	rowVariances	<- apply(dataset, 1, var)
+	nonZeroRows		<- which( rowVariances != 0 )
+	
+	return ( dataset[nonZeroRows, ] ) 
+}
+
+RemoveAllZeroVarianceCols <- function(dataset){
+	colVariances	<- apply(dataset, 2, var)
+	nonZeroCols		<- which( colVariances != 0 )
+
+	return ( dataset[,nonZeroCols ] ) 
+}
+
 ## Clears dataset: Removes all rows with NaN and all columns with 0s only
 ClearDataset <- function(dataset){
 	return ( RemoveAllZeroColumns(RemoveAllNanRows(dataset)) )
@@ -60,31 +79,65 @@ SplitDataSetTrainTest <- function(dataset, targetColumnName, ratio, shuffle=T){
 	return ( list(trainingData = trainingDataSet, testingData = testingDataSet) ) 
 }
 
+## Returns dataset with balanced classes
+## Eg: ClassesToSameCount(iris[-(1:45), ], "Species")
+ClassesToSameCount <- function(dataset, targetColumnName){
+	newDataSet	<- data.frame()
+	classes		<- as.factor( dataset[, targetColumnName] )
+	leastSize	<- min( table(classes) )
+
+	for(c in levels(classes)){
+		classRows	<- which(classes == c)
+		toLet		<- classRows[ sample( leastSize) ]
+
+		newDataSet	<- rbind(newDataSet, dataset[toLet,])
+	}
+
+	return( newDataSet )
+}
+
 ## Splits dataset into train and test datasets (by trainToTestRatio) preserving class balance (by targetColumnName).
 ## Rows can be shuffled before. Datasets can be scaled by scaleBy parameter "none"/"minmax"/"z-score".
 ## Returns named list with $Train, $Test datasets with Features $X and Targets $Y names. Scaling info in $ScaleInfo.
 ## Eg: PrepareTrainAndTest(iris, "Species", 2/3, shuffle=T, scaleBy="z-score") 
-PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3, shuffle=T, scaleBy="none", convertToFactors=F){
+PrepareTrainAndTest <- function(dataset, 
+								targetColumnName, 
+								trainToTestRatio=2/3, 
+								shuffle=T, 
+								scaleBy="none", 
+								convertToFactors=F, 
+								allClassesSameSize=T){
+	
+	if (allClassesSameSize == T){
+		dataset <- ClassesToSameCount(dataset, targetColumnName)
+	}
+	
 	splitDataset <- SplitDataSetTrainTest(dataset, targetColumnName, trainToTestRatio, shuffle)
 
 	train		<- GetXAndY(splitDataset$trainingData,	targetColumnName)
 	test		<- GetXAndY(splitDataset$testingData,	targetColumnName)
 	
-	#migt happen that some features are present only in Test samples, this feature shall be removed.
-	newTrainX		<- RemoveAllZeroColumns(train$X)	
-	keptFeatures	<- colnames(newTrainX)
-	newTestX		<- KeepOnlyGivenColumns(test$X, keptFeatures)
+	# remove zero value features (caused eg. by train/test split), apply to test
+	newTrainX		<- RemoveAllZeroColumns(train$X)
+	newTestX		<- KeepOnlyGivenColumns(test$X, colnames(newTrainX))
 
 	train$X			<- as.data.frame( newTrainX )
 	test$X			<- as.data.frame( newTestX )
+
+	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
+	train			<- scaledDatasets$Train
+	test			<- scaledDatasets$Test
 
 	if (convertToFactors == T){
 		train$X		<- DataFrameToFactor(train$X)
 		test$X		<- DataFrameToFactor(test$X)
 	}
-	
-	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
-	return ( list(Train = scaledDatasets$Train, Test = scaledDatasets$Test, ScaleInfo = scaledDatasets$ScaleInfo ) )
+
+	# remove zero variance features (caused eg. by train/test split), apply to test
+	train$X <- RemoveAllZeroVarianceCols(train$X)
+	test$X  <- KeepOnlyGivenColumns(test$X, colnames(train$X))
+
+	return ( list(Train = train, Test = test, ScaleInfo = scaledDatasets$ScaleInfo ) )
 }
 
 ## Scales train and test dataset by zscore/minmax w.r.t. train dataset
@@ -103,12 +156,17 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 		scaleInfo		<- list( Min = trainColsMin, Range = trainColsRange )
 
 	}else if ( scaleBy == "z-score" || scaleBy == "zscore" ){
-		trainColsSd		<- apply(trainX, 2, FUN=sd)
+		trainColsSd		<- apply(trainX, 2, FUN=sd) 
 		trainColsMean	<- apply(trainX, 2, FUN=mean)
 
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
 		scaleInfo		<- list( Sd = trainColsSd, Mean = trainColsMean )
+	}else if ( scaleBy == "binarize" || scaleBy == "bin" ){
+		scaledTrainX	<- BinarizeDataFrame(trainX)
+		scaledTestX		<- BinarizeDataFrame(testX)
+		scaleInfo		<- list()
+
 	}else{
 		scaledTrainX	<- trainX
 		scaledTestX		<- testX

@@ -8,23 +8,17 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 ##  EXMAPLE 0
 ##  Simple examle
 
+#  - read data and prepare BOW
 adamFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/Adam", "Adam")
 henryFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/HenryVegetarian", "HenryVegetarian")
 
-#  - inspect files
-adamFiles
-henryFiles
-
-#  - tokenize
 adamTokens		<- TokenizeTexts(adamFiles)
 henryTokens		<- TokenizeTexts(henryFiles)
 allTokens		<- append(adamTokens, henryTokens)
 
-#  - build BOW
 allBOW			<- MakeBOWModel(allTokens)
-allBOW
 
-#  - prepare for training
+#  - prepare for training, train
 allBOW			<- FirstColNameWordsToColumn(allBOW)
 datasets		<- PrepareTrainAndTest(allBOW, "CLASS", 1/2, scaleBy="none", convertToFactors=T)
 
@@ -51,22 +45,28 @@ foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)
-allBOW			<- BinarizeDataFrame(allBOW)
 
 sprintf("BOW has %d words", ncol(allBOW))
 
 ## --	Step 1: Naive Approach	-------------------------------------------------------------------
 allBOW.Target	<- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none", convertToFactors=FALSE)
+datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
 train           <- datasets$Train
 test            <- datasets$Test
 
+#  - train SVM
 modelSVM		<- svm(train$X, train$Y, kernel='linear')
-
 EvaluateModelAndPlot(modelSVM, train, test)
 
-plot(cmdscale(dist(allBOW)), col=as.numeric(as.factor(allBOW.Target$AuthorTarget)))
+modelNB         <- naiveBayes(train$X, train$Y)
+EvaluateModelAndPlot(modelNB, train, test)
+
+#  - inspection of models
+#InspectNaiveBayes(modelNB, "ASIMOV")
+#InspectNaiveBayes(modelNB, "FOGLAR")
+
+#plot(cmdscale(dist(allBOW)), col=as.numeric(as.factor(allBOW.Target$AuthorTarget)))
 
 ## --	Step 2: TFIDF	-------------------------------------------------------------------
 ## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW
@@ -82,13 +82,11 @@ weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar)
 keepingWords		<- names(weights)
 
 allBOWFiltered		<- KeepOnlyGivenColumns(allBOW, keepingWords)
-allBOWFiltered		<- BinarizeMatrix(allBOWFiltered)
 
-sprintf("Original BOW has: %d words, filtered by TF-IDF has: %d words", ncol(allBOW), ncol(allBOWFiltered))
-
+#  - prepare datasets
 allBOWFiltered.Target	<- FirstColNameWordsToColumn(allBOWFiltered, "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOWFiltered.Target, "AuthorTarget", 3/4, scaleBy="none")
+datasets        <- PrepareTrainAndTest(allBOWFiltered.Target, "AuthorTarget", 2/3, scaleBy="binarize")
 train           <- datasets$Train
 test            <- datasets$Test
 
@@ -99,5 +97,8 @@ EvaluateModelAndPlot(modelSVM, train, test)
 EvaluateModelAndPlot(modelNB, train, test)
 
 #  Inspect Naive Bayes:
-InspectNaiveBayes(modelNB, "FOGLAR", 20)
-InspectNaiveBayes(modelNB, "ASIMOV", 20)
+#InspectNaiveBayes(modelNB, "FOGLAR", 20)
+#InspectNaiveBayes(modelNB, "ASIMOV", 20)
+
+# Some stats
+sprintf("Original BOW has: %d words, filtered by TF-IDF has: %d words. After removing zero variance: %d words", ncol(allBOW), ncol(allBOWFiltered), ncol(train$X))
