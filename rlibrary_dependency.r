@@ -18,3 +18,29 @@ stop_quietly <- function() {
 }
 
 rlibrary("brew")
+rlibrary("caTools")
+rlibrary("e1071")
+rlibrary("MASS")
+rlibrary("datasets")
+rlibrary("e1071")
+rlibrary("mlbench")
+rlibrary("stringr")
+rlibrary("klaR")
+
+rlibrary("stringi")
+rlibrary("proxy")
+rlibrary("stringdist")
+rlibrary("stringr")
+
+rlibrary("Biostrings", function(){
+	source("https://bioconductor.org/biocLite.R")
+	biocLite("Biostrings")
+})
+
+#rlibrary("mxnet", function(){
+#	cran <- getOption("repos")
+#	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
+#	options(repos = cran)
+#	install.packages("mxnet")
+#	# see http://mxnet.incubator.apache.org/get_started/install.html
+#})

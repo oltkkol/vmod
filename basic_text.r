@@ -4,15 +4,6 @@ Sys.getlocale(category="LC_ALL")
 
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
 
-rlibrary("stringi")
-rlibrary("proxy")
-rlibrary("stringdist")
-rlibrary("stringr")
-rlibrary("Biostrings", function(){
-	source("https://bioconductor.org/biocLite.R")
-	biocLite("Biostrings")
-})
-
 ## FILE WORK	###################################################################################
 
 # reads content of file as plain text

@@ -1,23 +1,6 @@
 ## DEPENDENCY	###################################################################################
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
 
-rlibrary("caTools")
-rlibrary("e1071")
-rlibrary("MASS")
-rlibrary("datasets")
-rlibrary("e1071")
-rlibrary("mlbench")
-rlibrary("stringr")
-rlibrary("klaR")
-
-#rlibrary("mxnet", function(){
-#	cran <- getOption("repos")
-#	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
-#	options(repos = cran)
-#	install.packages("mxnet")
-#	# see http://mxnet.incubator.apache.org/get_started/install.html
-#})
-
 ## functions	###################################################################################
 
 ## Shuffles data frame rows
