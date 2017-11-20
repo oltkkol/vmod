@@ -91,8 +91,8 @@ PrepareTrainAndTest <- function(dataset, targetColumnName, trainToTestRatio=2/3,
 	keptFeatures	<- colnames(newTrainX)
 	newTestX		<- KeepOnlyGivenColumns(test$X, keptFeatures)
 
-	train$X			<- newTrainX
-	test$X			<- newTestX
+	train$X			<- as.data.frame( newTrainX )
+	test$X			<- as.data.frame( newTestX )
 	
 	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
 	return ( list(Train = scaledDatasets$Train, Test = scaledDatasets$Test, ScaleInfo = scaledDatasets$ScaleInfo ) )
@@ -275,7 +275,7 @@ dataset		<- Sonar
 datasets	<- PrepareTrainAndTest(dataset, "Class", 2/3, scaleBy="minmax")
 
 modelBayes	<- naiveBayes(datasets$Train$X, datasets$Train$Y)
-modelSVM	<- svm(datasets$Train$X, datasets$Train$Y, kernel="linear")
+modelSVM	<- svm(datasets$Train$X, datasets$Train$Y, kernel="radial")
 
 EvaluateModelAndPlot(modelBayes,	datasets$Train, datasets$Test)
 EvaluateModelAndPlot(modelSVM,		datasets$Train, datasets$Test)
@@ -317,7 +317,7 @@ EvaluateModelAndPlot(bestModelResult$Model, train, test)
 authors		<- read.table("G:/VMOD/Datasety/BOW_FoglarAsimov_1k.txt", encoding="UTF-8", sep="\t", row.names=1, header=T)
 authors		<- RemoveGivenColumns(authors, c("TextName", "TextID"))	
 
-datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", shuffle=T, trainToTestRatio=6/8, scaleBy="none")
+datasets	<- PrepareTrainAndTest(authors, targetColumnName="Author", shuffle=T, trainToTestRatio=3/4, scaleBy="none")
 train		<- datasets$Train
 test		<- datasets$Test
 
@@ -328,12 +328,10 @@ modelSVM	<- svm(train$X, train$Y, kernel="linear")
 EvaluateModelAndPlot(modelSVM, train, test)
 
 #  Inspect Naive Bayes:
-words	<- as.data.frame(   t( sapply( modelNB$tables, function(x) x[,1])  ) )
-words[ order(-words$Foglar),][1:20,]		# top 10 decisive words for Foglar
-words[ order(-words$Asimov),][1:20,]		# top 10 decisive words for Asimov
+InspectNaiveBayes(modelNB, "Foglar", 20)	
+InspectNaiveBayes(modelNB, "Asimov", 20)	
 
 ## 4.	ULTRA FAST	###############################################################################
-
 authors		<- read.csv("G:/VMOD/Datasety/Autori.txt", sep="\t")
 dataset		<- KeepOnlyGivenColumns( authors, c("Author", "AVGTOKENLEN", "GINISCOEF", "L") )
 

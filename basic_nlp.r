@@ -1,13 +1,16 @@
 ## DEPDENCY #######################################################################################
+
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", encoding="UTF-8")
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encoding="UTF-8")
+
+####################################################################################################
 
 ##	EXAMPLE 1
 ##	Bag Of Words vs language vs Authorship attribution
 ##	Naive approach, TF-IDF
 
 asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Verne", "FOGLAR")
+foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Lem", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
@@ -25,9 +28,12 @@ sprintf("BOW has %d words", ncol(allBOW))
 ## --	Step 1: Naive Approach	-------------------------------------------------------------------
 allBOW.Target	<- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 3/4, scaleBy="none")
+datasets        <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none")
 train           <- datasets$Train
 test            <- datasets$Test
+
+train$X			<- as.data.frame(train$X)
+test$X			<- as.data.frame(test$X)
 
 modelSVM		<- svm(train$X, train$Y, kernel='linear')
 modelNB         <- naiveBayes(train$X, train$Y)
@@ -35,12 +41,13 @@ modelNB         <- naiveBayes(train$X, train$Y)
 EvaluateModelAndPlot(modelSVM, train, test)
 EvaluateModelAndPlot(modelNB, train, test)
 
+
 # Inspect Naive Bayes:
 InspectNaiveBayes(modelNB, "FOGLAR", 20)	
 InspectNaiveBayes(modelNB, "ASIMOV", 20)
 
 # Inspect spatiality for SVM
-plot(cmdscale(dist(allBOW)), col=as.numeric(allBOW.Target$AuthorTarget))
+plot(cmdscale(dist(allBOW)), col=as.numeric(as.factor(allBOW.Target$AuthorTarget)))
 
 ## -- Step 2: Naive TF-IDF ------------------------------------------------------------------
 
