@@ -39,31 +39,33 @@ foglarFiles			<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/AsimovVSFoglar/Fog
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-numberOfTokens		<- 2000
+numberOfTokens		<- 1000
 asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)
 
-sprintf("BOW has %d words", ncol(allBOW))
+sprintf("Original BOW has %d words", ncol(allBOW))
 
 ## --	Step 1: Naive Approach	-------------------------------------------------------------------
 allBOW.Target   <- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
 
-#  - binary data (see convertToFactors=TRUE & scaleBy="binarize")
+#  - train on binarized data (has word / hasn't word; see convertToFactors=TRUE & scaleBy="binarize")
 datasets    <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
 m			<- naiveBayes(datasets$Train$X, datasets$Train$Y)
 
 EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
 
-#  - train on frequencies (see convertToFactors=FALSE & scaleBy="none")
+#  - train on word frequencies (see convertToFactors=FALSE & scaleBy="none")
 datasets	<- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none", convertToFactors=FALSE)
 m			<- svm(datasets$Train$X, datasets$Train$Y)
 n			<- naiveBayes(datasets$Train$X, datasets$Train$Y, laplace=1)
 
 EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
 EvaluateModelAndPlot(n, datasets$Train, datasets$Test)
+
+sprintf("... training BOW has %d words", ncol(datasets$Train$X))
 
 ## --	Step 2: TFIDF	-------------------------------------------------------------------
 ## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW

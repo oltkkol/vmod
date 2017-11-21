@@ -20,6 +20,11 @@ KeepOnlyGivenColumns <- function(dataset, columnNames){
 	return( dataset[ , which(colnames(dataset) %in% columnNames)] )
 }
 
+## Keeps columns in target dataset as in source dataset
+KeepOnlyGivenColumnsAsIn <- function(sourceDataset, targetDataset){
+	return ( KeepOnlyGivenColumns(targetDataset, colnames(sourceDataset))  )
+}
+
 ## Removes all rows containing NaN in any column
 RemoveAllNanRows <- function(dataset){
 	return ( na.omit(dataset) )
@@ -98,6 +103,7 @@ ClassesToSameCount <- function(dataset, targetColumnName){
 
 ## Splits dataset into train and test datasets (by trainToTestRatio) preserving class balance (by targetColumnName).
 ## Rows can be shuffled before. Datasets can be scaled by scaleBy parameter "none"/"minmax"/"z-score".
+## Columns with zero variances in training dataset are removed from both sets.
 ## Returns named list with $Train, $Test datasets with Features $X and Targets $Y names. Scaling info in $ScaleInfo.
 ## Eg: PrepareTrainAndTest(iris, "Species", 2/3, shuffle=T, scaleBy="z-score") 
 PrepareTrainAndTest <- function(dataset, 
@@ -124,6 +130,7 @@ PrepareTrainAndTest <- function(dataset,
 	train$X			<- as.data.frame( newTrainX )
 	test$X			<- as.data.frame( newTestX )
 
+	# scale
 	scaledDatasets	<- ScaleDatasets(train, test, scaleBy=scaleBy)
 	train			<- scaledDatasets$Train
 	test			<- scaledDatasets$Test
@@ -162,6 +169,7 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 		scaledTrainX	<- sapply(1:n, function(col) (trainX[,col] - trainColsMean[col])/trainColsSd[col] )
 		scaledTestX		<- sapply(1:n, function(col) (testX[,col]  - trainColsMean[col])/trainColsSd[col] )
 		scaleInfo		<- list( Sd = trainColsSd, Mean = trainColsMean )
+
 	}else if ( scaleBy == "binarize" || scaleBy == "bin" ){
 		scaledTrainX	<- BinarizeDataFrame(trainX)
 		scaledTestX		<- BinarizeDataFrame(testX)
