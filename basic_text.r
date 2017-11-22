@@ -36,10 +36,15 @@ GetFilesContentsFromFolder <- function(folderPath, prependNameBy=NULL){
 	return (output);
 }
 
-# merges vector of strings to one string
-# Eg.: MergeTexts( c("hello", "there")  )
-MergeTexts <- function(texts){
+# Merges vector of strings to one string
+# Eg.: MergePlainTexts( c("hello", "there")  )
+MergePlainTexts <- function(texts){
 	return( do.call(paste, c(as.list(texts), sep=" ")) )
+}
+# Merges list of tokenized texts, returns one vector of all tokens
+# Eg.: MergeTokenizedTexts( list(Text1 = c("Hello", "here", "is"), Text2 = c("Johny") ) )
+MergeTokenizedTexts <- function(texts){
+	return ( as.vector( unlist(texts) ) )
 }
 
 # adds a new column "CLASS" with first word from column names
@@ -131,14 +136,18 @@ MakeBOWModel <- function(tokenizedTexts){
 
 # Gets TF-IDF weights for given BOW Matrix. Zero weighted terms are omitted!
 # See example for ApplyTFIDF
-CalculateTFIDFOnBOW <- function(bowMatrix){
+CalculateTFIDFOnBOW <- function(bowMatrix, omitZeroWeightTerms=TRUE){
 	bowMatrix	<- RemoveAllZeroColumns(bowMatrix)
 
 	N			<- nrow(bowMatrix)
 	Nt			<- apply( bowMatrix, 2, function(colData) sum(colData > 0) )
 	weights		<- log(N / Nt)	
 	
-	return ( weights[weights != 0] )
+	if (omitZeroWeightTerms == TRUE){
+		return ( weights[weights != 0] )
+	}else{
+		return ( weights )
+	}
 }
 
 # Applies TF-IDF weighting to terms in bowMatrix.
@@ -245,7 +254,7 @@ X <- GetFileContent("C:/TextSamples/EN2.txt")
 Y <- GetFileContent("C:/TextSamples/EN3.txt")
 Z <- GetFileContent("C:/TextSamples/EN4.txt")
 
-corpora <- MergeTexts( c(X, Y, Z) )
+corpora <- MergePlainTexts( c(X, Y, Z) )
 
 tokens	<- TokenizeText( corpora )
 types	<- GetTypes(tokens)
