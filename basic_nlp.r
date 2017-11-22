@@ -33,7 +33,7 @@ InspectNaiveBayes(modelNB, "HenryVegetarian")
 ####################################################################################################
 ##	EXAMPLE 1
 ##	Bag Of Words vs language vs Authorship attribution
-##	Naive approach
+##	Naive approach 
 ####################################################################################################
 
 #  1. Read files & make Bag-Of-Words
@@ -43,7 +43,7 @@ foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Fog
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-numberOfTokens		<- 1000
+numberOfTokens		<- 50
 asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
@@ -68,17 +68,21 @@ EvaluateModelAndPlot(modelSVM, datasets$Train, datasets$Test)
 ####################################################################################################
 ##	EXAMPLE 2
 ##	Bag Of Words vs language vs Authorship attribution
-##	Naive approach
+##	Good approach
 ####################################################################################################
 
-#  1. Read files & Tokenize them
+#  1. Read files & Tokenize them (+ limit to random X words)
 asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
 foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
-#  2. Bag of Words: per texts
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
+numberOfTokens		<- 50
+asimovFileTokensAll	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
+foglarFileTokensAll	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
+
+#  2. Bag of Words: per texts
 allBOW				<- MakeBOWModel( append( asimovFileTokensAll, foglarFileTokensAll) )
 
 #  3. Bag Of Words: per author
