@@ -26,6 +26,7 @@ rlibrary("e1071")
 rlibrary("mlbench")
 rlibrary("stringr")
 rlibrary("klaR")
+rlibrary("ff")
 
 rlibrary("stringi")
 rlibrary("proxy")

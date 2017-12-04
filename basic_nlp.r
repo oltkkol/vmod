@@ -4,13 +4,13 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", enc
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encoding="UTF-8")
 
 ####################################################################################################
-
 ##  EXMAPLE 0
-##  Simple examle
+##  Simple examle with Bag Of Words
+####################################################################################################
 
-#  - read data and prepare BOW
-adamFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/Adam", "Adam")
-henryFiles		<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/Simple/HenryVegetarian", "HenryVegetarian")
+#  1. Read files & make Bag-Of-Words
+adamFiles		<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/Simple/Adam", "Adam")
+henryFiles		<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/Simple/HenryVegetarian", "HenryVegetarian")
 
 adamTokens		<- TokenizeTexts(adamFiles)
 henryTokens		<- TokenizeTexts(henryFiles)
@@ -18,86 +18,98 @@ allTokens		<- append(adamTokens, henryTokens)
 
 allBOW			<- MakeBOWModel(allTokens)
 
-#  - prepare for training, train
+#  2. Prepare datasets
 allBOW			<- FirstColNameWordsToColumn(allBOW)
-datasets		<- PrepareTrainAndTest(allBOW, "CLASS", 1/2, scaleBy="none", convertToFactors=T)
+datasets		<- PrepareTrainAndTest(allBOW, "CLASS", 1/2, scaleBy="none", convertToFactors=TRUE)
 
+#  3. Train Naive Bayes
 modelNB			<- naiveBayes(datasets$Train$X, datasets$Train$Y)
 EvaluateModelAndPlot(modelNB, datasets$Train, datasets$Test)
 
-#  - inspect model
+#  4. See inside Naive Bayes
 InspectNaiveBayes(modelNB, "Adam")
 InspectNaiveBayes(modelNB, "HenryVegetarian")
 
+####################################################################################################
 ##	EXAMPLE 1
 ##	Bag Of Words vs language vs Authorship attribution
-##	Naive approach, TF-IDF
+##	Naive approach 
+####################################################################################################
 
-asimovFiles			<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("L:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
+#  1. Read files & make Bag-Of-Words
+asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
+foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-numberOfTokens		<- 1000
+numberOfTokens		<- 50
 asimovFileTokens	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 foglarFileTokens	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
 allTokens		<- append(asimovFileTokens, foglarFileTokens)
 allBOW			<- MakeBOWModel(allTokens)
+allBOW.Target   <- FirstColNameWordsToColumn(allBOW,  "AuthorTarget")
 
 sprintf("Original BOW has %d words", ncol(allBOW))
 
-## --	Step 1: Naive Approach	-------------------------------------------------------------------
-allBOW.Target   <- FirstColNameWordsToColumn(allBOW, "AuthorTarget")
+#  2. Train Naive Bayes with binary features (YES/NO; see convertToFactors=TRUE)
+datasets	<- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
+modelBayes	<- naiveBayes(datasets$Train$X, datasets$Train$Y)
 
-#  - train on binarized data (has word / hasn't word; see convertToFactors=TRUE & scaleBy="binarize")
-datasets    <- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
-m			<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+EvaluateModelAndPlot(modelBayes, datasets$Train, datasets$Test)
 
-EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
+#  3. Train SVM with binary features (numeric 1/0; see convertToFactors=FALSE)
+datasets	<- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=FALSE)
+modelSVM    <- svm(datasets$Train$X, datasets$Train$Y) 
 
-#  - train on word frequencies (see convertToFactors=FALSE & scaleBy="none")
-datasets	<- PrepareTrainAndTest(allBOW.Target, "AuthorTarget", 2/3, scaleBy="none", convertToFactors=FALSE)
-m			<- svm(datasets$Train$X, datasets$Train$Y)
-n			<- naiveBayes(datasets$Train$X, datasets$Train$Y, laplace=1)
+EvaluateModelAndPlot(modelSVM, datasets$Train, datasets$Test)
 
-EvaluateModelAndPlot(m, datasets$Train, datasets$Test)
-EvaluateModelAndPlot(n, datasets$Train, datasets$Test)
+####################################################################################################
+##	EXAMPLE 2
+##	Bag Of Words vs language vs Authorship attribution
+##	Good approach
+####################################################################################################
 
-sprintf("... training BOW has %d words", ncol(datasets$Train$X))
+#  1. Read files & Tokenize them (+ limit to random X words)
+asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
+foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
 
-## --	Step 2: TFIDF	-------------------------------------------------------------------
-## Build two corpora: Asimov and Foglar, use TF-IDF to remove common words in BOW
+asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
+foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
 
-asimovCorpora   	<- MergeTexts(asimovFiles)
-foglarCorpora   	<- MergeTexts(foglarFiles)
+numberOfTokens		<- 50
+asimovFileTokensAll	<- LimitTokensInTexts(asimovFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
+foglarFileTokensAll	<- LimitTokensInTexts(foglarFileTokensAll, count=numberOfTokens, takeRandom=TRUE)
 
-asimovTokens    	<- TokenizeText(asimovCorpora)
-foglarTokens    	<- TokenizeText(foglarCorpora)
+#  2. Bag of Words: per texts
+allBOW				<- MakeBOWModel( append( asimovFileTokensAll, foglarFileTokensAll) )
 
-bowAsimovVsFoglar   <- MakeBOWModel( list(Asimov = asimovTokens, Foglar = foglarTokens) )
-weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar)
+#  3. Bag Of Words: per author
+asimovCorpora   	<- MergeTokenizedTexts(asimovFileTokensAll)
+foglarCorpora   	<- MergeTokenizedTexts(foglarFileTokensAll)
+
+bowAsimovVsFoglar   <- MakeBOWModel( list(Asimov = asimovCorpora, Foglar = foglarCorpora) )
+
+#  - calculate per author TF-IDF to identify author specific words:
+weights             <- CalculateTFIDFOnBOW(bowAsimovVsFoglar, omitZeroWeightTerms=TRUE)
 keepingWords		<- names(weights)
+newAllBOW			<- KeepOnlyGivenColumns(allBOW, keepingWords)
 
-allBOWFiltered		<- KeepOnlyGivenColumns(allBOW, keepingWords)
+sprintf("All BOW has: %d words. New authors specific BOW has: %d words", ncol(bowAsimovVsFoglar), ncol(newAllBOW))
 
-#  - prepare datasets
-allBOWFiltered.Target	<- FirstColNameWordsToColumn(allBOWFiltered, "AuthorTarget")
+#  5. Prepare datasets & Train
+newAllBOW.Target	<- FirstColNameWordsToColumn(newAllBOW,  "AuthorTarget")
 
-datasets        <- PrepareTrainAndTest(allBOWFiltered.Target, "AuthorTarget", 2/3, scaleBy="binarize")
-train           <- datasets$Train
-test            <- datasets$Test
+#  - see: binarize, factors=TRUE
+datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
+modelNB		<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+EvaluateModelAndPlot(modelNB, datasets$Train, datasets$Test)
 
-modelSVM		<- svm(train$X, train$Y, kernel='linear')
-modelNB         <- naiveBayes(train$X, train$Y)
+InspectNaiveBayes(modelNB, "FOGLAR", 20)
+InspectNaiveBayes(modelNB, "ASIMOV", 20)
 
-EvaluateModelAndPlot(modelSVM, train, test)
-EvaluateModelAndPlot(modelNB, train, test)
-
-#  Inspect Naive Bayes:
-#InspectNaiveBayes(modelNB, "FOGLAR", 20)
-#InspectNaiveBayes(modelNB, "ASIMOV", 20)
-
-# Some stats
-sprintf("Original BOW has: %d words, filtered by TF-IDF has: %d words. After removing zero variance: %d words", ncol(allBOW), ncol(allBOWFiltered), ncol(train$X))
+#  - see: binarize, factors=FALSE
+datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=FALSE)
+modelSVM	<- svm(datasets$Train$X, datasets$Train$Y, kernel='linear')
+EvaluateModelAndPlot(modelSVM, datasets$Train, datasets$Test)
