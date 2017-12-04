@@ -38,10 +38,10 @@ rlibrary("Biostrings", function(){
 	biocLite("Biostrings")
 })
 
-#rlibrary("mxnet", function(){
-#	cran <- getOption("repos")
-#	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
-#	options(repos = cran)
-#	install.packages("mxnet")
-#	# see http://mxnet.incubator.apache.org/get_started/install.html
-#})
+rlibrary("mxnet", function(){
+	cran <- getOption("repos")
+	cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/"
+	options(repos = cran)
+	install.packages("mxnet")
+	# see http://mxnet.incubator.apache.org/get_started/install.html
+})
