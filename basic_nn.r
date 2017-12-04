@@ -5,8 +5,6 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 
 rlibrary("mxnet")
 
-####################################################################################################
-
 plotMetric <- function(a, b, env, ...){ 
 	if (is.null(env$acc.log)) env$acc.log <- c()
 	env$acc.log <- append(env$acc.log, env$metric$get(env$train.metric)$value)
@@ -20,12 +18,19 @@ GetSoftmaxResult <- function(softmaxOutput){
 }
 
 ####################################################################################################
+##	EXAMPLE 1: Sonar
+####################################################################################################
 
+data(Sonar)
 datasets			<- PrepareTrainAndTest(Sonar, "Class")
 datasets$Train$X	<- data.matrix(datasets$Train$X)
 datasets$Test$X		<- data.matrix(datasets$Test$X)
 datasets$Train$Y	<- as.numeric(datasets$Train$Y)-1
-datasets$Test$Y		<- as.numeric(datasets$Train$Y)-1
+datasets$Test$Y		<- as.numeric(datasets$Test$Y)-1
+
+datasets$Train$Y
+datasets$Test$Y
+
 
 data <- mx.symbol.Variable("data")
 
@@ -45,12 +50,12 @@ model <- mx.model.FeedForward.create(C_o,
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
                                         num.round=200, 
-                                        array.batch.size=20,
                                         learning.rate=0.1, 
-                                        eval.metric=mx.metric.accuracy,
+										array.batch.size=20,
                                         wd=0.01,
+										eval.metric=mx.metric.accuracy,
                                         epoch.end.callback=plotMetric)
 
 graph.viz(model$symbol)
 
-EvaluateModelAndPlot(model, datasets$Train, datasets$Test)
+EvaluateModelAndPlot(model, datasets$Train, datasets$Test, GetSoftmaxResult)
