@@ -197,11 +197,15 @@ DataFrameToFactor <- function(df){
 
 
 ## Calculates confusion table for given model and given test data
-PredictAndMakeConfussionMatrix <- function(model, testData){
+PredictAndMakeConfussionMatrix <- function(model, testData, predTransformFunction=NULL){
 	yHat <- predict(model, testData$X)
 
 	if ("class" %in% names( yHat )){
 		yHat <- yHat$class
+	}
+
+	if (!is.null(predTransformFunction)){
+		yHat <- predTransformFunction(yHat)
 	}
 
 	return ( table(testData$Y, yHat) )
@@ -234,8 +238,8 @@ CalculateStatisticsForConfusionMatrix <- function(cm){
 }
 
 ## Calculates confusion matrix and all other statistics for model and testing data
-EvaluateModel <- function(model, testData){
-	cm = PredictAndMakeConfussionMatrix(model, testData)
+EvaluateModel <- function(model, testData, predTransformFunction=NULL){
+	cm = PredictAndMakeConfussionMatrix(model, testData, predTransformFunction)
 	return (
 		list(
 			Confusionmatrix	= cm,
@@ -244,11 +248,11 @@ EvaluateModel <- function(model, testData){
 	)
 }
 
-EvaluateModelAndPlot <- function(model, trainData, testData, newWindow=T){
+EvaluateModelAndPlot <- function(model, trainData, testData, predTransformFunction=NULL, newWindow=T){
 	if (newWindow) x11()
 
-	resultTrain <- EvaluateModel(model, trainData)
-	resultTest	<- EvaluateModel(model, testData)
+	resultTrain <- EvaluateModel(model, trainData, predTransformFunction)
+	resultTest	<- EvaluateModel(model, testData,  predTransformFunction)
 
 	layout(matrix(c(1,1,1,1,2,3,4,5), nrow=2, byrow=T))
 	data <- round( rbind( unlist(resultTrain$Statistics), unlist(resultTest$Statistics) ), 3)
