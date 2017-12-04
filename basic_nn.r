@@ -17,45 +17,121 @@ GetSoftmaxResult <- function(softmaxOutput){
 	return ( max.col( t(softmaxOutput) ) -1 )
 }
 
+PrepareDatasetsForNeuralNetwork <- function(datasets){
+	datasets$Train$X	<- data.matrix(datasets$Train$X)
+	datasets$Test$X		<- data.matrix(datasets$Test$X)
+	datasets$Train$Y	<- as.numeric(datasets$Train$Y) - 1
+	datasets$Test$Y		<- as.numeric(datasets$Test$Y)  - 1 	
+
+	return (datasets)
+}
+
+stop_quietly();
+
 ####################################################################################################
 ##	EXAMPLE 1: Sonar
 ####################################################################################################
 
+#  1. Prepare data (see PrepareDatasetsForNeuralNetwork converting factors to numeric & DF to data.matrix)
 data(Sonar)
-datasets			<- PrepareTrainAndTest(Sonar, "Class")
-datasets$Train$X	<- data.matrix(datasets$Train$X)
-datasets$Test$X		<- data.matrix(datasets$Test$X)
-datasets$Train$Y	<- as.numeric(datasets$Train$Y)-1
-datasets$Test$Y		<- as.numeric(datasets$Test$Y)-1
+datasets	<- PrepareTrainAndTest(Sonar, "Class")
+datasets	<- PrepareDatasetsForNeuralNetwork(datasets)
 
 datasets$Train$Y
 datasets$Test$Y
 
+#  2. Prepare NN Model:
+data <- mx.symbol.Variable("data")
+
+A   <- mx.symbol.FullyConnected(data=data, num_hidden=10)
+A_o <- mx.symbol.Activation(data=A, act_type="relu") 
+
+B   <- mx.symbol.FullyConnected(data=A_o, num_hidden=5)
+B_o <- mx.symbol.Activation(data=B, act_type="relu") 
+
+C   <- mx.symbol.FullyConnected(data=B_o, num_hidden=2)
+C_o <- mx.symbol.SoftmaxOutput(C)
+
+#  3. Create & Train:
+mx.set.seed(0)
+model <- mx.model.FeedForward.create(C_o,
+                                        X = datasets$Train$X, 
+                                        y = datasets$Train$Y, 
+                                        optimizer="adam",
+                                        ctx=mx.cpu(),     
+                                        num.round=100, 
+                                        learning.rate=0.001, 
+										array.batch.size=20,
+                                        wd=0.001,
+										eval.metric=mx.metric.accuracy,
+                                        epoch.end.callback=plotMetric)
+
+#  4. Display our network
+graph.viz(model$symbol)
+
+#  5. Evaluate
+EvaluateModelAndPlot(model, datasets$Train, datasets$Test, GetSoftmaxResult)
+
+####################################################################################################
+##	EXAMPLE 2: Easy authorship with BOW
+####################################################################################################
+
+## [1] Prepare BOW
+
+#  1. Read files & Tokenize them (+ limit to random X words)
+authorA_Files	<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Asimov", "ASIMOV")
+authorB_Files	<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Foglar", "FOGLAR")
+
+authorA_Tokens	<- TokenizeTexts(authorA_Files)
+authorB_Tokens	<- TokenizeTexts(authorB_Files)
+
+numberOfTokens	<- 50
+authorA_Tokens	<- LimitTokensInTexts(authorA_Tokens, count=numberOfTokens, takeRandom=TRUE)
+authorB_Tokens	<- LimitTokensInTexts(authorB_Tokens, count=numberOfTokens, takeRandom=TRUE)
+
+#  2. Bag of Words: per texts
+allBOW				<- MakeBOWModel( append( authorA_Tokens, authorB_Tokens) )
+
+#  3. Bag Of Words: per author
+authorA_Corpora   	<- MergeTokenizedTexts(authorA_Tokens)
+authorB_Corpora   	<- MergeTokenizedTexts(authorB_Tokens)
+bowAuthorAVsB		<- MakeBOWModel( list(AuthorA = authorA_Corpora, AuthorB = authorB_Corpora) )
+
+#  - calculate per author TF-IDF to identify author specific words:
+weights             <- CalculateTFIDFOnBOW(bowAuthorAVsB, omitZeroWeightTerms=TRUE)
+newAllBOW			<- KeepOnlyGivenColumns( allBOW, names(weights) )
+
+#  5. Prepare datasets & Train
+newAllBOW.Target	<- FirstColNameWordsToColumn(newAllBOW,  "AuthorTarget")
+
+## [2] Prepare datasets
+datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=FALSE)
+datasets	<- PrepareDatasetsForNeuralNetwork(datasets)
+
+## [3] Prepare & Train Neural Network:
 
 data <- mx.symbol.Variable("data")
 
-A   <- mx.symbol.FullyConnected(data=data, num_hidden=200)
+A   <- mx.symbol.FullyConnected(data=data, num_hidden=100)
 A_o <- mx.symbol.Activation(data=A, act_type="relu") 
 
 B   <- mx.symbol.FullyConnected(data=A_o, num_hidden=10)
 B_o <- mx.symbol.Activation(data=B, act_type="relu") 
 
-C   <- mx.symbol.FullyConnected(data=B_o, num_hidden=3)
+C   <- mx.symbol.FullyConnected(data=B_o, num_hidden=2)
 C_o <- mx.symbol.SoftmaxOutput(C)
 
 mx.set.seed(0)
 model <- mx.model.FeedForward.create(C_o,
-                                        X=datasets$Train$X, 
-                                        y=datasets$Train$Y, 
+                                        X = datasets$Train$X, 
+                                        y = datasets$Train$Y, 
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
-                                        num.round=200, 
-                                        learning.rate=0.1, 
-										array.batch.size=20,
-                                        wd=0.01,
+                                        num.round=50, 
+                                        learning.rate=0.00001, 
+										array.batch.size=2,
+                                        wd=0.0001,
 										eval.metric=mx.metric.accuracy,
                                         epoch.end.callback=plotMetric)
-
-graph.viz(model$symbol)
 
 EvaluateModelAndPlot(model, datasets$Train, datasets$Test, GetSoftmaxResult)
