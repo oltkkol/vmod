@@ -4,10 +4,16 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", enc
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encoding="UTF-8")
 
 plotMetric <- function(a, b, env, ...){ 
-	if (is.null(env$acc.log)) env$acc.log <- c()
-	env$acc.log <- append(env$acc.log, env$metric$get(env$train.metric)$value)
+	if (is.null(env$train.acc.log)){
+        env$train.acc.log   <- c()
+        env$test.acc.log    <- c()
+    } 
 
-	plot(env$acc.log) 
+	env$train.acc.log   <- append(env$train.acc.log, env$metric$get(env$train.metric)$value)
+    env$test.acc.log    <- append(env$test.acc.log,  env$metric$get(env$eval.metric)$value)
+
+	plot(env$train.acc.log, type="o", col="blue")   # :-/
+    points(env$test.acc.log, type="o", col="red")
 	return (TRUE)
 }
 
@@ -55,9 +61,10 @@ mx.set.seed(0)
 model <- mx.model.FeedForward.create(C_o,
                                         X = datasets$Train$X, 
                                         y = datasets$Train$Y, 
+                                        eval.data=list(data=datasets$Test$X, label=datasets$Test$Y),
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
-                                        num.round=100, 
+                                        num.round=500, 
                                         learning.rate=0.001, 
 										array.batch.size=20,
                                         wd=0.001,
@@ -123,6 +130,7 @@ mx.set.seed(0)
 model <- mx.model.FeedForward.create(C_o,
                                         X = datasets$Train$X, 
                                         y = datasets$Train$Y, 
+                                        eval.data=list(data=datasets$Test$X, label=datasets$Test$Y),
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
                                         num.round=50, 
