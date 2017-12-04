@@ -9,8 +9,8 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encod
 ####################################################################################################
 
 #  1. Read files & make Bag-Of-Words
-adamFiles		<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/Simple/Adam", "Adam")
-henryFiles		<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/Simple/HenryVegetarian", "HenryVegetarian")
+adamFiles		<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Adam", "Adam")
+henryFiles		<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/HenryVegetarian", "HenryVegetarian")
 
 adamTokens		<- TokenizeTexts(adamFiles)
 henryTokens		<- TokenizeTexts(henryFiles)
@@ -37,8 +37,8 @@ InspectNaiveBayes(modelNB, "HenryVegetarian")
 ####################################################################################################
 
 #  1. Read files & make Bag-Of-Words
-asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
+asimovFiles			<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Asimov", "ASIMOV")
+foglarFiles			<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Foglar", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
@@ -72,8 +72,8 @@ EvaluateModelAndPlot(modelSVM, datasets$Train, datasets$Test)
 ####################################################################################################
 
 #  1. Read files & Tokenize them (+ limit to random X words)
-asimovFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Asimov", "ASIMOV")
-foglarFiles			<- GetFilesContentsFromFolder("G:/VMOD/DATASETY/AsimovVSFoglar/Foglar", "FOGLAR")
+asimovFiles			<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Asimov", "ASIMOV")
+foglarFiles			<- GetFilesContentsFromFolder("D:/VMOD/DATASETY/Foglar", "FOGLAR")
 
 asimovFileTokensAll	<- TokenizeTexts(asimovFiles)
 foglarFileTokensAll	<- TokenizeTexts(foglarFiles)
@@ -113,3 +113,36 @@ InspectNaiveBayes(modelNB, "ASIMOV", 20)
 datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=FALSE)
 modelSVM	<- svm(datasets$Train$X, datasets$Train$Y, kernel='linear')
 EvaluateModelAndPlot(modelSVM, datasets$Train, datasets$Test)
+
+####################################################################################################
+##	EXAMPLE 3
+##	Bag Of Words & Naive Bays: Sentiment Analysis
+####################################################################################################
+
+goodFiles		<- GetFilesContentsFromFolder("C:/DATA/Sentiment/GOOD", "GOOD") # 1000 files with positive reviews
+badFiles		<- GetFilesContentsFromFolder("C:/DATA/Sentiment/BAD",  "BAD")  # 1000 files with negative reviews
+
+goodTokens		<- TokenizeTexts(goodFiles)
+badTokens		<- TokenizeTexts(badFiles)
+
+# BOW per texts
+allBOW			<- MakeBOWModel( append( goodTokens, badTokens) )
+
+# BOW per sentiment
+goodCorpora   	<- MergeTokenizedTexts(goodTokens)
+badCorpora   	<- MergeTokenizedTexts(badTokens)
+bowGoodVsBad	<- MakeBOWModel( list(Goods = goodCorpora, Bads = badCorpora) )
+
+# Remove unsignificant words
+weights         <- CalculateTFIDFOnBOW(bowGoodVsBad, omitZeroWeightTerms=TRUE)
+newAllBOW		<- KeepOnlyGivenColumns(allBOW, names(weights))
+
+# Prepare dataset & Train & Eval
+newAllBOW.Target	<- FirstColNameWordsToColumn(newAllBOW,  "AuthorTarget")
+
+datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
+modelNB		<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+
+EvaluateModelAndPlot(modelNB, datasets$Train, datasets$Test)
+InspectNaiveBayes(modelNB, "GOOD", 20)
+InspectNaiveBayes(modelNB, "BAD", 20)
