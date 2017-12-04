@@ -3,8 +3,6 @@
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_text.r", encoding="UTF-8")
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/basic_ml.r", encoding="UTF-8")
 
-rlibrary("mxnet")
-
 plotMetric <- function(a, b, env, ...){ 
 	if (is.null(env$acc.log)) env$acc.log <- c()
 	env$acc.log <- append(env$acc.log, env$metric$get(env$train.metric)$value)
