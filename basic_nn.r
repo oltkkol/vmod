@@ -68,10 +68,10 @@ model <- mx.model.FeedForward.create( E_o,
                                         eval.data=list(data=datasets$Test$X, label=datasets$Test$Y),
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
-                                        num.round=500, 
                                         learning.rate=0.0001, 
-										array.batch.size=10,
                                         wd=0.000183,
+                                        num.round=200, 
+										array.batch.size=10,
 										eval.metric=mx.metric.accuracy,
                                         epoch.end.callback=plotMetric )
 
