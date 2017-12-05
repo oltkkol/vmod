@@ -38,44 +38,61 @@ stop_quietly();
 
 #  1. Prepare data (see PrepareDatasetsForNeuralNetwork converting factors to numeric & DF to data.matrix)
 data(Sonar)
-datasets	<- PrepareTrainAndTest(Sonar, "Class")
-datasets	<- PrepareDatasetsForNeuralNetwork(datasets)
 
-datasets$Train$Y
-datasets$Test$Y
+datasets	<- PrepareTrainAndTest(Sonar, "Class", 2/3, scaleBy="z-score")
+datasets	<- PrepareDatasetsForNeuralNetwork(datasets)
 
 #  2. Prepare NN Model:
 data <- mx.symbol.Variable("data")
 
-A   <- mx.symbol.FullyConnected(data=data, num_hidden=10)
+# 20 -> 20 -> 20 -> 20 -> 2 network with relus
+A   <- mx.symbol.FullyConnected(data=data, num_hidden=20)
 A_o <- mx.symbol.Activation(data=A, act_type="relu") 
 
-B   <- mx.symbol.FullyConnected(data=A_o, num_hidden=5)
+B   <- mx.symbol.FullyConnected(data=A_o, num_hidden=20)
 B_o <- mx.symbol.Activation(data=B, act_type="relu") 
 
-C   <- mx.symbol.FullyConnected(data=B_o, num_hidden=2)
-C_o <- mx.symbol.SoftmaxOutput(C)
+C   <- mx.symbol.FullyConnected(data=B_o, num_hidden=20)
+C_o <- mx.symbol.Activation(data=C, act_type="relu") 
+
+D   <- mx.symbol.FullyConnected(data=C_o, num_hidden=20)
+D_o <- mx.symbol.Activation(data=D, act_type="relu") 
+
+E   <- mx.symbol.FullyConnected(data=D_o, num_hidden=2)
+E_o <- mx.symbol.SoftmaxOutput(E)
 
 #  3. Create & Train:
-mx.set.seed(0)
-model <- mx.model.FeedForward.create(C_o,
+model <- mx.model.FeedForward.create( E_o,
                                         X = datasets$Train$X, 
                                         y = datasets$Train$Y, 
                                         eval.data=list(data=datasets$Test$X, label=datasets$Test$Y),
                                         optimizer="adam",
                                         ctx=mx.cpu(),     
                                         num.round=500, 
-                                        learning.rate=0.001, 
-										array.batch.size=20,
-                                        wd=0.001,
+                                        learning.rate=0.0001, 
+										array.batch.size=10,
+                                        wd=0.000183,
 										eval.metric=mx.metric.accuracy,
-                                        epoch.end.callback=plotMetric)
+                                        epoch.end.callback=plotMetric )
 
 #  4. Display our network
 graph.viz(model$symbol)
 
 #  5. Evaluate
 EvaluateModelAndPlot(model, datasets$Train, datasets$Test, GetSoftmaxResult)
+
+#  6. Benchmark with LDA, SVM & naiveBayes
+datasets	<- PrepareTrainAndTest(Sonar, "Class", 2/3, scaleBy="z-score")
+#datasets	<- PrepareTrainAndTest(Sonar, "Class", 2/3, scaleBy="minmax")
+
+model		<- lda(datasets$Train$X, datasets$Train$Y)
+EvaluateModelAndPlot(model, datasets$Train, datasets$Test)
+
+model		<- svm(datasets$Train$X, datasets$Train$Y, kernel="linear")
+EvaluateModelAndPlot(model, datasets$Train, datasets$Test)
+
+model		<- naiveBayes(datasets$Train$X, datasets$Train$Y)
+EvaluateModelAndPlot(model, datasets$Train, datasets$Test)
 
 ####################################################################################################
 ##	EXAMPLE 2: Easy authorship with BOW

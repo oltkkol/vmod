@@ -153,6 +153,7 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 	trainX			<- trainDataset$X
 	testX			<- testDataset$X
 	n				<- ncol(trainX)
+	trainXColNames	<- colnames(trainX)
 
 	if ( scaleBy == "min-max" || scaleBy == "minmax" ){
 		trainColsRange	<- apply(trainX, 2, FUN=function(r) max(r) - min(r) )
@@ -180,6 +181,9 @@ ScaleDatasets <- function(trainDataset, testDataset, scaleBy="z-score"){
 		scaledTestX		<- testX
 		scaleInfo		<- list()
 	}
+	
+	colnames(scaledTrainX)	<- trainXColNames
+	colnames(scaledTestX)	<- trainXColNames
 	
 	outputTrain		<- list( X = scaledTrainX,	Y = trainDataset$Y)
 	outputTest		<- list( X = scaledTestX, 	Y = testDataset$Y )
