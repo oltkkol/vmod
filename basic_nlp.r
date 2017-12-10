@@ -138,9 +138,9 @@ weights         <- CalculateTFIDFOnBOW(bowGoodVsBad, omitZeroWeightTerms=TRUE)
 newAllBOW		<- KeepOnlyGivenColumns(allBOW, names(weights))
 
 # Prepare dataset & Train & Eval
-newAllBOW.Target	<- FirstColNameWordsToColumn(newAllBOW,  "AuthorTarget")
+newAllBOW.Target	<- FirstColNameWordsToColumn(newAllBOW,  "Sentiment")
 
-datasets	<- PrepareTrainAndTest(newAllBOW.Target, "AuthorTarget", 2/3, scaleBy="binarize", convertToFactors=TRUE)
+datasets	<- PrepareTrainAndTest(newAllBOW.Target, "Sentiment", 2/3, scaleBy="binarize", convertToFactors=TRUE)
 modelNB		<- naiveBayes(datasets$Train$X, datasets$Train$Y)
 
 EvaluateModelAndPlot(modelNB, datasets$Train, datasets$Test)
