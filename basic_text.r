@@ -82,8 +82,8 @@ TokenizeText <- function(text, regexPattern="\\W+", regexIsMask=FALSE, convertTo
 
 # tokenizes list of texts
 # Eg.: TokenizeTexts( c("Hey, this is an example.", "Yes. Good.") )
-TokenizeTexts <- function(texts){
-	return( lapply(texts, TokenizeText) )
+TokenizeTexts <- function(texts, ...){
+	return( lapply(texts, function(t) TokenizeText(t, ...) ) )
 }
  
 # Gets types (dictionary) from token list
