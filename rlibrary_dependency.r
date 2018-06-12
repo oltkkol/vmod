@@ -45,3 +45,8 @@ rlibrary("mxnet", function(){
 	install.packages("mxnet")
 	# see http://mxnet.incubator.apache.org/get_started/install.html
 })
+
+Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
+Sys.getlocale(category="LC_ALL")
+
+cat("Dependency lib loaded.")
