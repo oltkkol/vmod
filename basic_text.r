@@ -1,7 +1,4 @@
 ## DEPENDENCY #####################################################################################
-Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
-Sys.getlocale(category="LC_ALL")
-
 source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependency.r", encoding="UTF-8")
 
 ## FILE WORK	###################################################################################
