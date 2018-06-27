@@ -5,6 +5,7 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependenc
 
 ## L2 Norm
 l2 <- function(r) sqrt( sum(r**2) )
+l2Norm <- function(r) r/l2(r)
 
 ## Shuffles data frame rows
 ShuffleRows	<- function(dataset){
