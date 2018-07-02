@@ -145,6 +145,12 @@ CalculateTFIDFOnBOW <- function(bowMatrix, omitZeroWeightTerms=TRUE){
 		return ( weights )
 	}
 }
+					 
+# Makes n-grams from tokens
+# Eg.: MakeNGrams( c("a", "b", "c", "d", "e", "f", "g"), n=3, glue=" ")
+MakeNGrams <- function(tokens, n=2, glue="->"){
+	return( sapply( 1:(length(tokens)-n+1), function(i) paste( tokens[i:(i+n-1)], collapse=glue ) ) )
+}
 
 # Applies TF-IDF weighting to terms in bowMatrix.
 # Eg.:	bowCorpora 	<- MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
