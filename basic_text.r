@@ -152,6 +152,50 @@ MakeNGrams <- function(tokens, n=2, glue="->"){
 	return( sapply( 1:(length(tokens)-n+1), function(i) paste( tokens[i:(i+n-1)], collapse=glue ) ) )
 }
 
+## Makes list of distances betweet target token and target tokens list 
+## Eg.: GetNearestTokensFromListToToken(c("x", "A", "x", "x", "B", "A", "x", "x", "C", "A"), "A", c("B", "C"))
+##		returns list:	B = {3, 1} (as first encounter of A has nearest element B=3, second encounter has nearest B=1), 
+##						C = {1}  (last encounter of A with nearest element C=1)
+
+GetNearestTokensFromListToToken <- function(s, target, targetsList){
+	posInfo <- list()
+
+	for(i in 1:length(s)){
+		if (s[i] == target){
+			foundJ <- FALSE
+			foundK <- FALSE
+
+			for(j in i:1){
+				if (s[j] %in% targetsList){
+					foundJ = TRUE
+					break
+				}
+			}
+
+			for(k in i:length(s)){
+				if (s[k] %in% targetsList){
+					foundK = TRUE
+					break
+				} 
+			}
+
+			if (foundJ && foundK){
+				if (i-j < k-i ){
+					posInfo[[ s[j] ]] <- append( posInfo[[ s[j] ]], i-j )
+				}else{
+					posInfo[[ s[k] ]] <- append( posInfo[[ s[k] ]], k-i )
+				}
+			}else if(foundJ){
+				posInfo[[ s[j] ]] <- append( posInfo[[ s[j] ]], i-j )
+			}else if(foundK){
+				posInfo[[ s[k] ]] <- append( posInfo[[ s[k] ]], k-i )
+			}
+		}
+	}
+
+	return(posInfo)
+}	       
+
 # Applies TF-IDF weighting to terms in bowMatrix.
 # Eg.:	bowCorpora 	<- MakeBOWModel( list( text1=c("John", "ate", "an", "apple"), text2=c("Kate", "ate", "an", "orange") ) )
 #		weights	 	<- CalculateTFIDFOnBOW(bowCorpora)
