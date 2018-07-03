@@ -102,6 +102,15 @@ LimitTokensInTexts <- function(texts, count, ...){
 	return ( lapply(texts, function(t) LimitTokens(t, count, ...)) )
 }
 
+## Deletes given list of tokens from tokens vector
+## Eg.: RemoveTokens(c("yes", "good"), c("good"))
+RemoveTokens <- function(tokens, removeTokens){
+	for(toRemove in removeTokens){
+		tokens <- RemoveToken(tokens, toRemove)
+	}
+	return (tokens)
+}
+			
 ## BOW MODEL	###################################################################################
 
 RemoveAllZeroColumns <- function(dataset){
