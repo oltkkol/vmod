@@ -155,11 +155,19 @@ CalculateTFIDFOnBOW <- function(bowMatrix, omitZeroWeightTerms=TRUE){
 	}
 }
 					 
-# Makes n-grams from tokens
+# Makes n-grams from tokens.
+# If Glue is a string, vector of n-gram strings are returned, otherwise a matrix
 # Eg.: MakeNGrams( c("a", "b", "c", "d", "e", "f", "g"), n=3, glue=" ")
 MakeNGrams <- function(tokens, n=2, glue="->"){
-	return( sapply( 1:(length(tokens)-n+1), function(i) paste( tokens[i:(i+n-1)], collapse=glue ) ) )
+	if (is.character(glue)){
+		f <- function(i) paste( tokens[i:(i+n-1)], collapse=glue )
+	}else{
+		f <- function(i) tokens[i:(i+n-1)]
+	}
+
+	return( sapply( 1:(length(tokens)-n+1), f) )
 }
+
 
 ## Makes list of distances betweet target token and target tokens list 
 ## Eg.: GetNearestTokensFromListToToken(c("x", "A", "x", "x", "B", "A", "x", "x", "C", "A"), "A", c("B", "C"))
