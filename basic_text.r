@@ -111,6 +111,22 @@ RemoveTokens <- function(tokens, removeTokens){
 	return (tokens)
 }
 			
+## Read text file in vertical format: word form, lemma, pos
+## Eg.: ReadVertical("foglar.lemma.txt")
+ReadVertical <- function(file){
+	plainText <- GetFileContent(file)
+	vertical  <- TokenizeText(plainText, regexPattern="\\p{Z}", regexIsMask=F, convertToLowerCase=F)
+	vertical  <- stri_split_regex(vertical, "\t")
+
+	forms  <- sapply(vertical, function(e) e[[1]])
+	lemmas <- sapply(vertical, function(e) e[[2]])
+	poss   <- sapply(vertical, function(e) e[[3]])
+
+	text   <- cbind(Word=forms,Lemma=lemmas, POS=poss)
+	return (text)
+}
+
+			
 ## BOW MODEL	###################################################################################
 
 RemoveAllZeroColumns <- function(dataset){
