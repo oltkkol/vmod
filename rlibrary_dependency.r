@@ -27,6 +27,7 @@ rlibrary("mlbench")
 rlibrary("stringr")
 rlibrary("klaR")
 rlibrary("ff")
+rlibrary("hash")
 
 rlibrary("stringi")
 rlibrary("proxy")
