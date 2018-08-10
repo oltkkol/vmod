@@ -3,6 +3,12 @@ source("https://raw.githubusercontent.com/oltkkol/vmod/master/rlibrary_dependenc
 
 ## FILE WORK	###################################################################################
 
+# gets a list of files in a folder with full path
+GetFilesInFolder <- function(folder){
+	fileNames <- list.files(folder)
+	sapply(fileNames, function(s) paste(folder, s, sep="/"))
+}
+
 # reads content of file as plain text
 GetFileContent <- function(fileName){
 	readedText <- readLines(fileName, encoding="UTF-8")
