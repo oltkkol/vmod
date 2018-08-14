@@ -34,6 +34,14 @@ rlibrary("proxy")
 rlibrary("stringdist")
 rlibrary("stringr")
 
+rlibrary("ggplot2")
+rlibrary("grid")
+rlibrary("gridExtra")
+rlibrary("ggExtra")
+rlibrary("Metrics")
+rlibrary("minpack.lm")
+rlibrary("MLmetrics")
+
 rlibrary("Biostrings", function(){
 	source("https://bioconductor.org/biocLite.R")
 	biocLite("Biostrings")
