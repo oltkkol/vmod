@@ -43,6 +43,7 @@ rlibrary("minpack.lm")
 rlibrary("MLmetrics")
 rlibrary("snow")
 rlibrary("doSNOW")
+rlibrary("parallel")
 
 rlibrary("Biostrings", function(){
 	source("https://bioconductor.org/biocLite.R")
