@@ -42,6 +42,7 @@ rlibrary("Metrics")
 rlibrary("minpack.lm")
 rlibrary("MLmetrics")
 rlibrary("snow")
+rlibrary("doSNOW")
 
 rlibrary("Biostrings", function(){
 	source("https://bioconductor.org/biocLite.R")
