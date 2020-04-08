@@ -8,6 +8,29 @@ GetFileContent <- function(fileName){
 	return(readedText)
 }
 
+# reads all files and their contents from given folder and saves them into named list
+# Eg.: GetFilesContentsFromFolder("/Documents/Texts/")
+# Eg.: GetFilesContentsFromFolder("/Documents/Asimov/", "ASIMOV")	#... prepends all names with ASIMOV
+GetFilesContentsFromFolder <- function(folderPath, prependNameBy=NULL){
+	getFileContentFromFolderFile <- function(fileName)	{
+		fileName <- paste(folderPath, fileName, sep="/")
+		return( GetFileContent(fileName) )
+	}
+
+	output <- list()
+	for(file in list.files(folderPath)){
+		output[file] <- getFileContentFromFolderFile(file)
+	}
+
+	if (length(output) > 0){
+		if (is.null(prependNameBy) == FALSE){
+			names(output) <- paste(prependNameBy, names(output))
+		}
+	}
+	
+	return (output);
+}
+
 # Basic plain text tokenizer by regular expression split mask
 # Eg.:	TokenizeText("Hey, this is an example")  returns "hey", "this", "is", "an", "example"
 #		TokenizeText("Hey, this is an example", regexPattern="\\b\\w{3}\\b", regexIsMask=TRUE) returns "hey"
