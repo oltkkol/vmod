@@ -1,3 +1,6 @@
+Sys.setlocale(category="LC_ALL", locale = "English_United States.1252")
+Sys.getlocale(category="LC_ALL")
+
 library(stringi)
 library(stringr)
 
