@@ -7,7 +7,7 @@ library(stringr)
 # reads content of file as plain text
 GetFileContent <- function(fileName){
 	readedText <- readLines(fileName, encoding="UTF-8")
-	readedText <- do.call(paste, c(as.list(readedText), sep=" "))
+	readedText <- do.call(paste, c(as.list(readedText), sep="\n"))
 	return(readedText)
 }
 
