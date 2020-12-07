@@ -54,6 +54,12 @@ TokenizeText <- function(text, regexPattern="\\W+", regexIsMask=FALSE, convertTo
 	return(tokens)
 }
 
+# tokenizes list of texts
+# Eg.: TokenizeTexts( c("Hey, this is an example.", "Yes. Good.") )
+TokenizeTexts <- function(texts, ...){
+	return( lapply(texts, function(t) TokenizeText(t, ...) ) )
+}
+
 # Makes n-grams from tokens.
 # If Glue is a string, vector of n-gram strings are returned, otherwise a matrix
 # Eg.: MakeNGrams( c("a", "b", "c", "d", "e", "f", "g"), n=3, glue=" ")
